@@ -36,7 +36,7 @@ defmodule Giocci.MixProject do
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
       {:ex_doc, "~> 0.27", only: :dev, runtime: false},
       {:dotenvy, "~> 1.0.0"},
-      {:zenohex, "~>0.3.2"}
+      {:zenohex, "~> 0.5.0"}
     ]
   end
 
