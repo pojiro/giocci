@@ -1,7 +1,7 @@
 services:
   zenohd:
     build: .
-    image: giocci/zenohd:local
+    image: ghcr.io/pojiro/giocci_zenohd:1.6.2
     ports:
       - "7447:7447"
       - "7446:7446/udp"
