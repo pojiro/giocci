@@ -7,9 +7,11 @@ defmodule GiocciRelay.Application do
 
   @impl true
   def start(_type, _args) do
+    relay_name = Application.fetch_env!(:giocci_relay, :relay_name)
+    key_prefix = Application.get_env(:giocci_relay, :key_prefix, "")
+
     children = [
-      # Starts a worker by calling: GiocciRelay.Worker.start_link(arg)
-      # {GiocciRelay.Worker, arg}
+      {GiocciRelay.Worker, [relay_name: relay_name, key_prefix: key_prefix]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
