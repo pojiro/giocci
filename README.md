@@ -2,8 +2,15 @@
 
 **TODO: Add description**
 
+## How to build and push docker image
+
+```bash
+docker compose build zenohd
+docker compose push zenohd
+```
+
 ## How to test
 
 ```bash
-docker compose run --rm --volume .:/root/giocci --workdir /root/giocci zenohd mix test
+./bin/test.sh
 ```
