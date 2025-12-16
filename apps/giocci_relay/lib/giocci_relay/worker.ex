@@ -1,9 +1,10 @@
 defmodule GiocciRelay.Worker do
   use GenServer
 
+  @worker_name __MODULE__
+
   def start_link(args) do
-    name = Keyword.get(args, :name, __MODULE__)
-    GenServer.start_link(__MODULE__, args, name: name)
+    GenServer.start_link(__MODULE__, args, name: @worker_name)
   end
 
   def init(args) do
@@ -14,6 +15,11 @@ defmodule GiocciRelay.Worker do
       Zenohex.Config.default()
       |> Zenohex.Config.update_in(["mode"], fn _ -> "client" end)
       |> Zenohex.Session.open()
+
+    register_engine_key = Path.join(key_prefix, "giocci/register/engine/#{relay_name}")
+
+    {:ok, register_engine_queryable_id} =
+      Zenohex.Session.declare_queryable(session_id, register_engine_key)
 
     register_client_key = Path.join(key_prefix, "giocci/register/client/#{relay_name}")
 
@@ -30,11 +36,37 @@ defmodule GiocciRelay.Worker do
        relay_name: relay_name,
        session_id: session_id,
        key_prefix: key_prefix,
+       register_engine_queryable_id: register_engine_queryable_id,
+       register_engine_key: register_engine_key,
        register_client_queryable_id: register_client_queryable_id,
        register_client_key: register_client_key,
        save_module_queryable_id: save_module_queryable_id,
        save_module_key: save_module_key
      }}
+  end
+
+  # for GiocciEngine.register_engine/2
+  def handle_info(
+        %Zenohex.Query{key_expr: register_engine_key, payload: payload, zenoh_query: zenoh_query},
+        %{register_engine_key: register_engine_key} = state
+      ) do
+    result =
+      case :erlang.binary_to_term(payload) do
+        %{engine_name: _engine_name} ->
+          # IMPLEMENT ME
+          :ok
+
+        _ ->
+          {:error, :invalid_payload}
+      end
+
+    :ok = Zenohex.Query.reply(zenoh_query, register_engine_key, :erlang.term_to_binary(result))
+    {:noreply, state}
+  rescue
+    ArgumentError ->
+      result = {:error, :invalid_erlang_binary}
+      :ok = Zenohex.Query.reply(zenoh_query, register_engine_key, :erlang.term_to_binary(result))
+      {:noreply, state}
   end
 
   # for GiocciClient.register_client/2
@@ -68,7 +100,7 @@ defmodule GiocciRelay.Worker do
       ) do
     session_id = state.session_id
     key_prefix = state.key_prefix
-    engine_name = ""
+    engine_name = "giocci_engine"
 
     key = Path.join(key_prefix, "giocci/save_module/relay/#{engine_name}")
 

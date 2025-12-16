@@ -4,15 +4,7 @@ defmodule GiocciEngine do
   """
 
   @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> GiocciEngine.hello()
-      :world
-
   """
-  def hello do
-    :world
-  end
+  @spec register_engine(String.t(), keyword()) :: :ok | {:error, reason :: term()}
+  defdelegate register_engine(relay_name, opts \\ []), to: GiocciEngine.Worker
 end

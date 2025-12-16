@@ -7,9 +7,11 @@ defmodule GiocciEngine.Application do
 
   @impl true
   def start(_type, _args) do
+    engine_name = Application.fetch_env!(:giocci_engine, :engine_name)
+    key_prefix = Application.get_env(:giocci_engine, :key_prefix, "")
+
     children = [
-      # Starts a worker by calling: GiocciEngine.Worker.start_link(arg)
-      # {GiocciEngine.Worker, arg}
+      {GiocciEngine.Worker, [engine_name: engine_name, key_prefix: key_prefix]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

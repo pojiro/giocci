@@ -26,6 +26,7 @@ defmodule GiocciIntegration.MixProject do
   defp deps do
     [
       {:giocci_relay, in_umbrella: true},
+      {:giocci_engine, in_umbrella: true},
       {:giocci_client, in_umbrella: true}
     ]
   end
