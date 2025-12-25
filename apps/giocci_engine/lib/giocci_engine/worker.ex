@@ -58,28 +58,16 @@ defmodule GiocciEngine.Worker do
     session_id = state.session_id
     key_prefix = state.key_prefix
 
-    key = Path.join(key_prefix, "giocci/register/engine/#{relay_name}")
     timeout = Keyword.get(opts, :timeout, 100)
 
-    payload =
-      %{engine_name: engine_name}
-      |> :erlang.term_to_binary()
+    send_term = %{engine_name: engine_name}
 
     result =
-      case Zenohex.Session.get(session_id, key, timeout, payload: payload) do
-        {:ok, [%Zenohex.Sample{payload: payload}]} ->
-          case :erlang.binary_to_term(payload) do
-            :ok -> :ok
-          end
-
-        {:error, :timeout} ->
-          {:error, :timeout}
-
-        {:error, reason} ->
-          {:error, "Zenohex unexpected error: #{inspect(reason)}"}
-
-        error ->
-          {:error, "Unexpected error: #{inspect(error)}"}
+      with key <- Path.join(key_prefix, "giocci/register/engine/#{relay_name}"),
+           {:ok, binary} <- encode(send_term),
+           {:ok, binary} <- zenohex_get(session_id, key, timeout, binary),
+           {:ok, :ok = _recv_term} <- decode(binary) do
+        :ok
       end
 
     {:reply, result, state}
@@ -87,111 +75,93 @@ defmodule GiocciEngine.Worker do
 
   # for GiocciRelay.save_module/3
   def handle_info(
-        %Zenohex.Query{key_expr: save_module_key, payload: payload, zenoh_query: zenoh_query},
+        %Zenohex.Query{key_expr: save_module_key, payload: binary, zenoh_query: zenoh_query},
         %{save_module_key: save_module_key} = state
       ) do
-    engine_name = state.engine_name
-
     result =
-      case :erlang.binary_to_term(payload) do
-        %{module_object_code: {module, binary, filename}} ->
-          case :code.load_binary(module, filename, binary) do
-            {:module, module} ->
-              Logger.info("#{engine_name} loaded #{inspect(module)}.")
-              :ok
-
-            {:error, reason} ->
-              {:error, reason}
-          end
-
-        invalid_term ->
-          Logger.error("#{engine_name} received invalid term #{inspect(invalid_term)}.")
-          {:error, "GiocciEngine received invalid term."}
+      with {:ok, %{module_object_code: {module, binary, filename}}} <- decode(binary),
+           {:module, _module} <- :code.load_binary(module, filename, binary) do
+        :ok
       end
 
-    :ok = Zenohex.Query.reply(zenoh_query, save_module_key, :erlang.term_to_binary(result))
+    {:ok, binary} = encode(result)
+    :ok = Zenohex.Query.reply(zenoh_query, save_module_key, binary)
+
     {:noreply, state}
-  rescue
-    ArgumentError ->
-      result = {:error, :invalid_erlang_binary}
-      Logger.error("#{state.engine_name} received invalid binary.")
-      :ok = Zenohex.Query.reply(zenoh_query, save_module_key, :erlang.term_to_binary(result))
-      {:noreply, state}
   end
 
   # for GiocciClient.exec_func/3
   def handle_info(
-        %Zenohex.Query{key_expr: exec_func_key, payload: payload, zenoh_query: zenoh_query},
+        %Zenohex.Query{key_expr: exec_func_key, payload: binary, zenoh_query: zenoh_query},
         %{exec_func_key: exec_func_key} = state
       ) do
-    engine_name = state.engine_name
-
     result =
-      case :erlang.binary_to_term(payload) do
-        %{mfargs: {m, f, args}} ->
-          apply(m, f, args)
-
-        invalid_term ->
-          Logger.error(
-            "#{engine_name} received invalid term #{inspect(invalid_term)} for exec_func."
-          )
-
-          {:error, "GiocciEngine received invalid term #{inspect(invalid_term)} for exec_func."}
+      with {:ok, %{mfargs: mfargs}} <- decode(binary),
+           {:ok, result} <- exec_func(mfargs) do
+        result
       end
 
-    :ok = Zenohex.Query.reply(zenoh_query, exec_func_key, :erlang.term_to_binary(result))
-    {:noreply, state}
-  rescue
-    UndefinedFunctionError ->
-      mfargs = :erlang.binary_to_term(payload)
-      result = {:error, "Cannot exec not saved func, #{inspect(mfargs)} "}
-      Logger.error("#{state.engine_name} cannot exec #{inspect(mfargs)}.")
+    {:ok, binary} = encode(result)
+    :ok = Zenohex.Query.reply(zenoh_query, exec_func_key, binary)
 
-      :ok = Zenohex.Query.reply(zenoh_query, exec_func_key, :erlang.term_to_binary(result))
-      {:noreply, state}
+    {:noreply, state}
   end
 
   # for GiocciClient.exec_func_async/4
   def handle_info(
-        %Zenohex.Sample{key_expr: exec_func_async_key, payload: payload},
+        %Zenohex.Sample{key_expr: exec_func_async_key, payload: binary},
         %{exec_func_async_key: exec_func_async_key} = state
       ) do
-    engine_name = state.engine_name
     session_id = state.session_id
     key_prefix = state.key_prefix
 
-    try do
+    with {:ok, recv_term} <- decode(binary),
+         %{mfargs: mfargs, exec_id: exec_id, client_name: client_name} <- recv_term,
+         {:ok, result} <- exec_func(mfargs),
+         key <- Path.join(key_prefix, "giocci/exec_func_async/engine/#{client_name}") do
       result =
-        case :erlang.binary_to_term(payload) do
-          %{mfargs: {m, f, args}, exec_id: exec_id, client_name: client_name} ->
-            {:ok,
-             %{
-               mfargs: {m, f, args},
-               exec_id: exec_id,
-               client_name: client_name,
-               result: apply(m, f, args)
-             }}
+        {:ok,
+         %{
+           mfargs: mfargs,
+           exec_id: exec_id,
+           client_name: client_name,
+           result: result
+         }}
 
-          invalid_term ->
-            Logger.error(
-              "#{engine_name} received invalid term #{inspect(invalid_term)} for exec_func."
-            )
-
-            {:error, "GiocciEngine received invalid term #{inspect(invalid_term)} for exec_func."}
-        end
-
-      {:ok, %{client_name: client_name}} = result
-      key = Path.join(key_prefix, "giocci/exec_func_async/engine/#{client_name}")
-      :ok = Zenohex.Session.put(session_id, key, :erlang.term_to_binary(result))
-      {:noreply, state}
-    rescue
-      UndefinedFunctionError ->
-        mfargs = :erlang.binary_to_term(payload)
-        result = {:error, "Cannot exec not saved func, #{inspect(mfargs)} "}
-        Logger.error("#{state.engine_name} cannot exec #{inspect(mfargs)}.")
-
-        :ok = Zenohex.Session.put(session_id, exec_func_async_key, :erlang.term_to_binary(result))
-        {:noreply, state}
+      {:ok, binary} = encode(result)
+      :ok = Zenohex.Session.put(session_id, key, binary)
     end
+
+    {:noreply, state}
+  end
+
+  defp zenohex_get(session_id, key, timeout, payload) do
+    case Zenohex.Session.get(session_id, key, timeout, payload: payload) do
+      {:ok, [%Zenohex.Sample{payload: payload}]} ->
+        {:ok, payload}
+
+      {:error, :timeout} ->
+        {:error, :timeout}
+
+      {:error, reason} ->
+        {:error, "Zenohex.Session.get/4 error: #{inspect(reason)}"}
+    end
+  end
+
+  defp encode(term) do
+    {:ok, :erlang.term_to_binary(term)}
+  end
+
+  defp decode(payload) do
+    {:ok, :erlang.binary_to_term(payload)}
+  rescue
+    ArgumentError -> {:error, :decode_failed}
+  end
+
+  defp exec_func({m, f, args} = mfargs) do
+    {:ok, apply(m, f, args)}
+  rescue
+    UndefinedFunctionError ->
+      {:error, "#{inspect(mfargs)} not defined"}
   end
 end
