@@ -79,8 +79,9 @@ defmodule GiocciEngine.Worker do
         %{save_module_key: save_module_key} = state
       ) do
     result =
-      with {:ok, %{module_object_code: {module, binary, filename}}} <- decode(binary),
-           {:module, _module} <- :code.load_binary(module, filename, binary) do
+      with {:ok, recv_term} <- decode(binary),
+           {:ok, {module_object_code}} <- extract_save_module(recv_term),
+           :ok <- save_module(module_object_code) do
         :ok
       end
 
@@ -96,8 +97,10 @@ defmodule GiocciEngine.Worker do
         %{exec_func_key: exec_func_key} = state
       ) do
     result =
-      with {:ok, %{mfargs: mfargs}} <- decode(binary),
-           {:ok, result} <- exec_func(mfargs) do
+      with {:ok, recv_term} <- decode(binary),
+           {:ok, {{m, f, args}, _client_name}} <- extract_exec_func(recv_term),
+           :ok <- ensure_module_saved(m),
+           {:ok, result} <- exec_func({m, f, args}) do
         result
       end
 
@@ -116,13 +119,14 @@ defmodule GiocciEngine.Worker do
     key_prefix = state.key_prefix
 
     with {:ok, recv_term} <- decode(binary),
-         %{mfargs: mfargs, exec_id: exec_id, client_name: client_name} <- recv_term,
-         {:ok, result} <- exec_func(mfargs),
+         {:ok, {{m, f, args}, exec_id, client_name}} <- extract_exec_func_async(recv_term),
+         :ok <- ensure_module_saved(m),
+         {:ok, result} <- exec_func({m, f, args}),
          key <- Path.join(key_prefix, "giocci/exec_func_async/engine/#{client_name}") do
       result =
         {:ok,
          %{
-           mfargs: mfargs,
+           mfargs: {m, f, args},
            exec_id: exec_id,
            client_name: client_name,
            result: result
@@ -158,10 +162,60 @@ defmodule GiocciEngine.Worker do
     ArgumentError -> {:error, :decode_failed}
   end
 
+  defp extract_save_module(term) do
+    %{
+      module_object_code: module_object_code,
+      timeout: _timeout,
+      client_name: _client_name
+    } = term
+
+    {:ok, {module_object_code}}
+  rescue
+    MatchError -> {:error, :term_not_expected}
+  end
+
+  defp save_module({module, binary, filename}) do
+    case :code.load_binary(module, filename, binary) do
+      {:module, _module} -> :ok
+      error -> error
+    end
+  end
+
   defp exec_func({m, f, args} = mfargs) do
     {:ok, apply(m, f, args)}
   rescue
     UndefinedFunctionError ->
       {:error, "#{inspect(mfargs)} not defined"}
+  end
+
+  defp ensure_module_saved(module) do
+    if Code.ensure_loaded?(module) do
+      :ok
+    else
+      {:error, :module_not_saved}
+    end
+  end
+
+  defp extract_exec_func(term) do
+    %{
+      mfargs: mfargs,
+      client_name: client_name
+    } = term
+
+    {:ok, {mfargs, client_name}}
+  rescue
+    MatchError -> {:error, :term_not_expected}
+  end
+
+  defp extract_exec_func_async(term) do
+    %{
+      mfargs: mfargs,
+      exec_id: exec_id,
+      client_name: client_name
+    } = term
+
+    {:ok, {mfargs, exec_id, client_name}}
+  rescue
+    MatchError -> {:error, :term_not_expected}
   end
 end
