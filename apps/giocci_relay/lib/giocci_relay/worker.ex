@@ -140,14 +140,14 @@ defmodule GiocciRelay.Worker do
         %Zenohex.Query{key_expr: inquiry_engine_key, payload: binary, zenoh_query: zenoh_query},
         %{inquiry_engine_key: inquiry_engine_key} = state
       ) do
+    registered_engines = state.registered_engines
     registered_clients = state.registered_clients
-    # IMPREMENT ME, select engine logic
+
     result =
       with {:ok, recv_term} <- decode(binary),
-           {:ok, {{m, _f, _args}, client_name}} <- extract_exec_func(recv_term),
+           {:ok, {_mfargs, client_name}} <- extract_exec_func(recv_term),
            :ok <- ensure_client_registered(client_name, registered_clients),
-           :ok <- ensure_module_saved(m),
-           {:ok, engine_name} <- {:ok, "giocci_engine"} do
+           {:ok, engine_name} <- select_engine(registered_engines) do
         {:ok, %{engine_name: engine_name}}
       end
 
@@ -211,18 +211,19 @@ defmodule GiocciRelay.Worker do
     end
   end
 
+  defp select_engine(registered_engines) do
+    if Enum.empty?(registered_engines) do
+      {:error, :engine_not_registered}
+    else
+      # IMPREMENT ME, select engine logic
+      {:ok, List.first(registered_engines)}
+    end
+  end
+
   defp save_module({module, binary, filename}) do
     case :code.load_binary(module, filename, binary) do
       {:module, _module} -> :ok
       error -> error
-    end
-  end
-
-  defp ensure_module_saved(module) do
-    if Code.ensure_loaded?(module) do
-      :ok
-    else
-      {:error, :module_not_saved}
     end
   end
 end
