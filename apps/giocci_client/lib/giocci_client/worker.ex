@@ -40,7 +40,8 @@ defmodule GiocciClient.Worker do
      %{
        client_name: client_name,
        session_id: session_id,
-       key_prefix: key_prefix
+       key_prefix: key_prefix,
+       registered_relays: []
      }}
   end
 
@@ -48,36 +49,45 @@ defmodule GiocciClient.Worker do
     client_name = state.client_name
     session_id = state.session_id
     key_prefix = state.key_prefix
+    registered_relays = state.registered_relays
 
     timeout = Keyword.get(opts, :timeout, 100)
 
     send_term = %{client_name: client_name}
 
-    result =
+    {result, state} =
       with key <- Path.join(key_prefix, "giocci/register/client/#{relay_name}"),
            {:ok, binary} <- encode(send_term),
            {:ok, binary} <- zenohex_get(session_id, key, timeout, binary),
-           {:ok, recv_term} <- decode(binary) do
-        :ok = recv_term
+           {:ok, :ok = _recv_term} <- decode(binary) do
+        registered_relays = [relay_name | registered_relays] |> Enum.uniq()
+        {:ok, %{state | registered_relays: registered_relays}}
+      else
+        error -> {error, state}
       end
 
     {:reply, result, state}
   end
 
   def handle_call({:save_module, relay_name, module, opts}, _from, state) do
+    client_name = state.client_name
     session_id = state.session_id
     key_prefix = state.key_prefix
+    registered_relays = state.registered_relays
 
     timeout = Keyword.get(opts, :timeout, 100)
 
     send_term =
       %{
         module_object_code: :code.get_object_code(module),
-        timeout: timeout
+        timeout: timeout,
+        client_name: client_name
       }
 
     result =
-      with key <- Path.join(key_prefix, "giocci/save_module/client/#{relay_name}"),
+      with :ok <- ensure_relay_registered(relay_name, registered_relays),
+           :ok <- ensure_module_found(module),
+           key <- Path.join(key_prefix, "giocci/save_module/client/#{relay_name}"),
            {:ok, binary} <- encode(send_term),
            {:ok, binary} <- zenohex_get(session_id, key, timeout, binary),
            {:ok, recv_term} <- decode(binary) do
@@ -88,15 +98,22 @@ defmodule GiocciClient.Worker do
   end
 
   def handle_call({:exec_func, relay_name, mfargs, opts}, _from, state) do
+    client_name = state.client_name
     session_id = state.session_id
     key_prefix = state.key_prefix
+    registered_relays = state.registered_relays
 
     timeout = Keyword.get(opts, :timeout, 100)
 
-    send_term = %{mfargs: mfargs}
+    send_term =
+      %{
+        mfargs: mfargs,
+        client_name: client_name
+      }
 
     result =
-      with key <- Path.join(key_prefix, "giocci/inquiry_engine/client/#{relay_name}"),
+      with :ok <- ensure_relay_registered(relay_name, registered_relays),
+           key <- Path.join(key_prefix, "giocci/inquiry_engine/client/#{relay_name}"),
            {:ok, binary} <- encode(send_term),
            {:ok, binary} <- zenohex_get(session_id, key, timeout, binary),
            {:ok, recv_term} <- decode(binary),
@@ -115,6 +132,7 @@ defmodule GiocciClient.Worker do
     client_name = state.client_name
     session_id = state.session_id
     key_prefix = state.key_prefix
+    registered_relays = state.registered_relays
 
     timeout = Keyword.get(opts, :timeout, 100)
 
@@ -128,7 +146,8 @@ defmodule GiocciClient.Worker do
       }
 
     result =
-      with key <- Path.join(key_prefix, "giocci/inquiry_engine/client/#{relay_name}"),
+      with :ok <- ensure_relay_registered(relay_name, registered_relays),
+           key <- Path.join(key_prefix, "giocci/inquiry_engine/client/#{relay_name}"),
            {:ok, send_binary} <- encode(send_term),
            {:ok, recv_binary} <- zenohex_get(session_id, key, timeout, send_binary),
            {:ok, recv_term} <- decode(recv_binary),
@@ -177,5 +196,21 @@ defmodule GiocciClient.Worker do
     {:ok, :erlang.binary_to_term(payload)}
   rescue
     ArgumentError -> {:error, :decode_failed}
+  end
+
+  defp ensure_module_found(module) do
+    if Code.ensure_loaded?(module) do
+      :ok
+    else
+      {:error, :module_not_found}
+    end
+  end
+
+  defp ensure_relay_registered(relay_name, registered_relays) do
+    if relay_name in registered_relays do
+      :ok
+    else
+      {:error, :relay_not_registered}
+    end
   end
 end
