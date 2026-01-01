@@ -7,12 +7,18 @@ defmodule GiocciClient.Application do
 
   @impl true
   def start(_type, _args) do
+    zenoh_config_file_path = Application.get_env(:giocci_client, :zenoh_config_file_path)
     client_name = Application.fetch_env!(:giocci_client, :client_name)
     key_prefix = Application.get_env(:giocci_client, :key_prefix, "")
 
     children = [
       {GiocciClient.Store, []},
-      {GiocciClient.Worker, [client_name: client_name, key_prefix: key_prefix]}
+      {GiocciClient.Worker,
+       [
+         zenoh_config_file_path: zenoh_config_file_path,
+         client_name: client_name,
+         key_prefix: key_prefix
+       ]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
