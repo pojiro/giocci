@@ -11,7 +11,9 @@ defmodule GiocciClient.MixProject do
       lockfile: "../../mix.lock",
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      description: description(),
+      package: package()
     ]
   end
 
@@ -26,7 +28,21 @@ defmodule GiocciClient.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:zenohex, "== 0.7.1"}
+      {:zenohex, "== 0.7.1"},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
+    ]
+  end
+
+  defp description() do
+    "Client library for Giocci (computational resource permeating wide-area distributed platform towards the B5G era)"
+  end
+
+  defp package() do
+    [
+      # These are the default files included in the package
+      files: ~w(lib .formatter.exs mix.exs README* LICENSE*),
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => "https://github.com/biyooon-ex/giocci"}
     ]
   end
 end
