@@ -10,13 +10,21 @@ defmodule GiocciRelay.Worker do
   end
 
   def init(args) do
+    zenoh_config =
+      case Keyword.get(args, :zenoh_config_file_path) do
+        nil ->
+          Zenohex.Config.default()
+          |> Zenohex.Config.update_in(["mode"], fn _ -> "client" end)
+
+        zenoh_config_file_path ->
+          zenoh_config_file_path
+          |> File.read!()
+      end
+
     relay_name = Keyword.fetch!(args, :relay_name)
     key_prefix = Keyword.get(args, :key_prefix, "")
 
-    {:ok, session_id} =
-      Zenohex.Config.default()
-      |> Zenohex.Config.update_in(["mode"], fn _ -> "client" end)
-      |> Zenohex.Session.open()
+    {:ok, session_id} = Zenohex.Session.open(zenoh_config)
 
     register_engine_key = Path.join(key_prefix, "giocci/register/engine/#{relay_name}")
 

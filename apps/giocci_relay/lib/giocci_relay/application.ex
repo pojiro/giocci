@@ -7,12 +7,18 @@ defmodule GiocciRelay.Application do
 
   @impl true
   def start(_type, _args) do
+    zenoh_config_file_path = Application.get_env(:giocci_relay, :zenoh_config_file_path)
     relay_name = Application.fetch_env!(:giocci_relay, :relay_name)
     key_prefix = Application.get_env(:giocci_relay, :key_prefix, "")
 
     children = [
       {GiocciRelay.ModuleStore, []},
-      {GiocciRelay.Worker, [relay_name: relay_name, key_prefix: key_prefix]}
+      {GiocciRelay.Worker,
+       [
+         zenoh_config_file_path: zenoh_config_file_path,
+         relay_name: relay_name,
+         key_prefix: key_prefix
+       ]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
