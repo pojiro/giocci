@@ -1,7 +1,7 @@
 services:
   zenohd:
     build: .
-    image: ghcr.io/pojiro/giocci_zenohd:1.6.2
+    image: ghcr.io/pojiro/giocci_zenohd:1.7.1
     working_dir: /root/giocci
     volumes:
       - .:/root/giocci

@@ -26,7 +26,7 @@ defmodule GiocciEngine.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:zenohex, "== 0.6.2"}
+      {:zenohex, "== 0.7.1"}
     ]
   end
 end
