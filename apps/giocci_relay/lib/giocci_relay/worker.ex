@@ -31,6 +31,9 @@ defmodule GiocciRelay.Worker do
     {:ok, register_engine_queryable_id} =
       Zenohex.Session.declare_queryable(session_id, register_engine_key)
 
+    {:ok, register_engine_subscriber_id} =
+      Zenohex.Session.declare_subscriber(session_id, register_engine_key)
+
     register_client_key = Path.join(key_prefix, "giocci/register/client/#{relay_name}")
 
     {:ok, register_client_queryable_id} =
@@ -52,6 +55,7 @@ defmodule GiocciRelay.Worker do
        session_id: session_id,
        key_prefix: key_prefix,
        register_engine_queryable_id: register_engine_queryable_id,
+       register_engine_subscriber_id: register_engine_subscriber_id,
        register_engine_key: register_engine_key,
        register_client_queryable_id: register_client_queryable_id,
        register_client_key: register_client_key,
@@ -92,6 +96,31 @@ defmodule GiocciRelay.Worker do
 
     {:ok, binary} = encode(result)
     :ok = Zenohex.Query.reply(zenoh_query, register_engine_key, binary)
+
+    {:noreply, state}
+  end
+
+  def handle_info(
+        %Zenohex.Sample{key_expr: register_engine_key, payload: binary},
+        %{register_engine_key: register_engine_key} = state
+      ) do
+    session_id = state.session_id
+    key_prefix = state.key_prefix
+    registered_engines = state.registered_engines
+
+    {_result, state} =
+      with {:ok, %{engine_name: engine_name}} <- decode(binary) do
+        with key <- Path.join(key_prefix, "giocci/save_module/relay/#{engine_name}"),
+             {:ok, module_object_code_list} <- GiocciRelay.ModuleStore.get(),
+             {:ok, binary} <- encode(module_object_code_list) do
+          zenohex_put(session_id, key, binary)
+        end
+
+        registered_engines = [engine_name | registered_engines] |> Enum.uniq()
+        {:ok, %{state | registered_engines: registered_engines}}
+      else
+        error -> {error, state}
+      end
 
     {:noreply, state}
   end

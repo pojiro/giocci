@@ -29,6 +29,7 @@ defmodule GiocciEngine.Worker do
 
     engine_name = Keyword.fetch!(args, :engine_name)
     key_prefix = Keyword.get(args, :key_prefix, "")
+    relay_name = Keyword.fetch!(args, :relay_name)
 
     {:ok, session_id} = Zenohex.Session.open(zenoh_config)
 
@@ -55,6 +56,7 @@ defmodule GiocciEngine.Worker do
        engine_name: engine_name,
        session_id: session_id,
        key_prefix: key_prefix,
+       relay_name: relay_name,
        save_module_key: save_module_key,
        save_module_queryable_id: save_module_queryable_id,
        save_module_subscriber_id: save_module_subscriber_id,
@@ -62,7 +64,23 @@ defmodule GiocciEngine.Worker do
        exec_func_queryable_id: exec_func_queryable_id,
        exec_func_async_key: exec_func_async_key,
        exec_func_async_subscriber_id: exec_func_async_subscriber_id
-     }}
+     }, {:continue, :register_engine}}
+  end
+
+  def handle_continue(:register_engine, state) do
+    engine_name = state.engine_name
+    session_id = state.session_id
+    key_prefix = state.key_prefix
+    relay_name = state.relay_name
+
+    send_term = %{engine_name: engine_name}
+
+    with key <- Path.join(key_prefix, "giocci/register/engine/#{relay_name}"),
+         {:ok, binary} <- encode(send_term) do
+      :ok = zenohex_put(session_id, key, binary)
+    end
+
+    {:noreply, state}
   end
 
   def handle_call({:register_engine, relay_name, opts}, _from, state) do
@@ -107,7 +125,7 @@ defmodule GiocciEngine.Worker do
         %{save_module_key: save_module_key} = state
       ) do
     with {:ok, recv_term} <- decode(binary) do
-      save_module(recv_term)
+      :ok = save_module(recv_term)
     end
 
     {:noreply, state}
@@ -171,6 +189,16 @@ defmodule GiocciEngine.Worker do
 
       {:error, reason} ->
         {:error, "Zenohex.Session.get/4 error: #{inspect(reason)}"}
+    end
+  end
+
+  defp zenohex_put(session_id, key, payload) do
+    case Zenohex.Session.put(session_id, key, payload) do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        {:error, "Zenohex.Session.put/4 error: #{inspect(reason)}"}
     end
   end
 
