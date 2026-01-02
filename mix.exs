@@ -14,6 +14,13 @@ defmodule Giocci.MixProject do
           config_providers: [
             {Config.Reader, {:system, "RELEASE_ROOT", "/giocci_relay.exs"}}
           ]
+        ],
+        giocci_engine: [
+          include_executables_for: [:unix],
+          applications: [giocci_engine: :permanent],
+          config_providers: [
+            {Config.Reader, {:system, "RELEASE_ROOT", "/giocci_engine.exs"}}
+          ]
         ]
       ]
     ]
