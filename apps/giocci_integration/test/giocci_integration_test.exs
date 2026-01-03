@@ -81,9 +81,6 @@ defmodule GiocciIntegrationTest do
       assert :ok = GiocciClient.save_module(@relay_name, GiocciIntegration)
       {:ok, _} = Application.ensure_all_started(:giocci_engine)
 
-      # wait for module saved in the engine
-      Process.sleep(100)
-
       assert 3 = GiocciClient.exec_func(@relay_name, {GiocciIntegration, :add, [1, 2]})
     end
   end

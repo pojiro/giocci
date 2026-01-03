@@ -31,9 +31,6 @@ defmodule GiocciRelay.Worker do
     {:ok, register_engine_queryable_id} =
       Zenohex.Session.declare_queryable(session_id, register_engine_key)
 
-    {:ok, register_engine_subscriber_id} =
-      Zenohex.Session.declare_subscriber(session_id, register_engine_key)
-
     register_client_key = Path.join(key_prefix, "giocci/register/client/#{relay_name}")
 
     {:ok, register_client_queryable_id} =
@@ -55,7 +52,6 @@ defmodule GiocciRelay.Worker do
        session_id: session_id,
        key_prefix: key_prefix,
        register_engine_queryable_id: register_engine_queryable_id,
-       register_engine_subscriber_id: register_engine_subscriber_id,
        register_engine_key: register_engine_key,
        register_client_queryable_id: register_client_queryable_id,
        register_client_key: register_client_key,
@@ -68,61 +64,41 @@ defmodule GiocciRelay.Worker do
      }}
   end
 
+  def handle_continue({:save_module, engine_name}, state) do
+    session_id = state.session_id
+    key_prefix = state.key_prefix
+
+    with key <- Path.join(key_prefix, "giocci/save_module/relay/#{engine_name}"),
+         {:ok, module_object_code_list} <- GiocciRelay.ModuleStore.get(),
+         {:ok, binary} <- encode(module_object_code_list) do
+      {:ok, _binary} = zenohex_get(session_id, key, _timeout = 5000, binary)
+    end
+
+    {:noreply, state}
+  end
+
   # for GiocciEngine.register_engine/2
   def handle_info(
         %Zenohex.Query{key_expr: register_engine_key, payload: binary, zenoh_query: zenoh_query},
         %{register_engine_key: register_engine_key} = state
       ) do
-    session_id = state.session_id
-    key_prefix = state.key_prefix
     registered_engines = state.registered_engines
 
-    {result, state} =
-      with {:ok, %{engine_name: engine_name}} <- decode(binary) do
-        with key <- Path.join(key_prefix, "giocci/save_module/relay/#{engine_name}"),
-             {:ok, module_object_code_list} <- GiocciRelay.ModuleStore.get(),
-             {:ok, binary} <- encode(module_object_code_list) do
-          # WHY: using zenohex_put/3
-          #      Since GiocciEngine.register_engine/2 is a synchronous call,
-          #      we use the asynchronous zenohex_put/3 to avoid a deadlock.
-          zenohex_put(session_id, key, binary)
-        end
+    with {:ok, %{engine_name: engine_name}} <- decode(binary) do
+      {:ok, binary} = encode(:ok)
+      :ok = Zenohex.Query.reply(zenoh_query, register_engine_key, binary)
 
-        registered_engines = [engine_name | registered_engines] |> Enum.uniq()
-        {:ok, %{state | registered_engines: registered_engines}}
-      else
-        error -> {error, state}
-      end
+      registered_engines = [engine_name | registered_engines] |> Enum.uniq()
+      state = %{state | registered_engines: registered_engines}
 
-    {:ok, binary} = encode(result)
-    :ok = Zenohex.Query.reply(zenoh_query, register_engine_key, binary)
+      {:noreply, state, {:continue, {:save_module, engine_name}}}
+    else
+      error ->
+        {:ok, binary} = encode(error)
+        :ok = Zenohex.Query.reply(zenoh_query, register_engine_key, binary)
 
-    {:noreply, state}
-  end
-
-  def handle_info(
-        %Zenohex.Sample{key_expr: register_engine_key, payload: binary},
-        %{register_engine_key: register_engine_key} = state
-      ) do
-    session_id = state.session_id
-    key_prefix = state.key_prefix
-    registered_engines = state.registered_engines
-
-    {_result, state} =
-      with {:ok, %{engine_name: engine_name}} <- decode(binary) do
-        with key <- Path.join(key_prefix, "giocci/save_module/relay/#{engine_name}"),
-             {:ok, module_object_code_list} <- GiocciRelay.ModuleStore.get(),
-             {:ok, binary} <- encode(module_object_code_list) do
-          zenohex_put(session_id, key, binary)
-        end
-
-        registered_engines = [engine_name | registered_engines] |> Enum.uniq()
-        {:ok, %{state | registered_engines: registered_engines}}
-      else
-        error -> {error, state}
-      end
-
-    {:noreply, state}
+        {:noreply, state}
+    end
   end
 
   # for GiocciClient.register_client/2
@@ -211,16 +187,6 @@ defmodule GiocciRelay.Worker do
 
       {:error, reason} ->
         {:error, "Zenohex.Session.get/4 error: #{inspect(reason)}"}
-    end
-  end
-
-  defp zenohex_put(session_id, key, payload) do
-    case Zenohex.Session.put(session_id, key, payload) do
-      :ok ->
-        :ok
-
-      {:error, reason} ->
-        {:error, "Zenohex.Session.put/4 error: #{inspect(reason)}"}
     end
   end
 
