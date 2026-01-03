@@ -7,4 +7,5 @@ services:
     volumes:
       - ./config/giocci_relay.exs:/root/giocci_relay/giocci_relay.exs:ro
       - ./config/zenoh.json:/root/giocci_relay/zenoh.json:ro
+      - ./tmp/log:/root/log:rw
     restart: "always"

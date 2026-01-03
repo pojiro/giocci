@@ -11,6 +11,7 @@ ENV LANG=C.UTF-8
 RUN mix local.hex --force && mix local.rebar --force
 
 COPY mix.exs mix.exs
+COPY config config
 COPY apps apps
 RUN mix deps.get --only prod
 RUN mix deps.compile
@@ -24,5 +25,6 @@ ENV MIX_ENV=prod
 ENV LANG=C.UTF-8
 
 COPY --from=builder /root/_build/prod/rel/giocci_engine giocci_engine
+RUN mkdir -p /root/log
 
 CMD ["/root/giocci_engine/bin/giocci_engine", "start"]
