@@ -86,17 +86,6 @@ defmodule GiocciEngine.Worker do
     {:noreply, state}
   end
 
-  def handle_info(
-        %Zenohex.Sample{key_expr: save_module_key, payload: binary},
-        %{save_module_key: save_module_key} = state
-      ) do
-    with {:ok, recv_term} <- decode(binary) do
-      :ok = save_module(recv_term)
-    end
-
-    {:noreply, state}
-  end
-
   # for GiocciClient.exec_func/3
   def handle_info(
         %Zenohex.Query{key_expr: exec_func_key, payload: binary, zenoh_query: zenoh_query},
