@@ -1,4 +1,4 @@
-# This config is an example for Giocci Realy Docker image
+# This config is an example for Giocci Engine Docker image
 import Config
 
 config :giocci_engine, zenoh_config_file_path: "/root/giocci_engine/zenoh.json"
