@@ -59,7 +59,7 @@ defmodule GiocciClient.Worker do
     key_prefix = state.key_prefix
     registered_relays = state.registered_relays
 
-    timeout = Keyword.get(opts, :timeout, 100)
+    timeout = Keyword.get(opts, :timeout, 5000)
 
     send_term = %{client_name: client_name}
 
@@ -84,7 +84,7 @@ defmodule GiocciClient.Worker do
     key_prefix = state.key_prefix
     registered_relays = state.registered_relays
 
-    timeout = Keyword.get(opts, :timeout, 100)
+    timeout = Keyword.get(opts, :timeout, 5000)
 
     send_term =
       %{
@@ -112,7 +112,7 @@ defmodule GiocciClient.Worker do
     key_prefix = state.key_prefix
     registered_relays = state.registered_relays
 
-    timeout = Keyword.get(opts, :timeout, 100)
+    timeout = Keyword.get(opts, :timeout, 5000)
 
     send_term =
       %{
@@ -143,7 +143,7 @@ defmodule GiocciClient.Worker do
     key_prefix = state.key_prefix
     registered_relays = state.registered_relays
 
-    timeout = Keyword.get(opts, :timeout, 100)
+    timeout = Keyword.get(opts, :timeout, 5000)
 
     exec_id = make_ref()
 
