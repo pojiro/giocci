@@ -46,6 +46,8 @@ defmodule GiocciRelay.Worker do
     {:ok, inquiry_engine_queryable_id} =
       Zenohex.Session.declare_queryable(session_id, inquiry_engine_key)
 
+    Logger.info("#{inspect(relay_name)} started.")
+
     {:ok,
      %{
        relay_name: relay_name,
@@ -88,12 +90,16 @@ defmodule GiocciRelay.Worker do
       {:ok, binary} = encode(:ok)
       :ok = Zenohex.Query.reply(zenoh_query, register_engine_key, binary)
 
+      Logger.debug("#{inspect(engine_name)} registration completed successfully.")
+
       registered_engines = [engine_name | registered_engines] |> Enum.uniq()
       state = %{state | registered_engines: registered_engines}
 
       {:noreply, state, {:continue, {:save_module, engine_name}}}
     else
       error ->
+        Logger.error("Engine registration failed by #{inspect(error)}.")
+
         {:ok, binary} = encode(error)
         :ok = Zenohex.Query.reply(zenoh_query, register_engine_key, binary)
 
@@ -110,10 +116,13 @@ defmodule GiocciRelay.Worker do
 
     {result, state} =
       with {:ok, %{client_name: client_name}} <- decode(binary) do
+        Logger.debug("#{inspect(client_name)} registration completed successfully.")
         registered_clients = [client_name | registered_clients] |> Enum.uniq()
         {:ok, %{state | registered_clients: registered_clients}}
       else
-        error -> {error, state}
+        error ->
+          Logger.error("Client registration failed by #{inspect(error)}.")
+          {error, state}
       end
 
     {:ok, binary} = encode(result)
@@ -146,7 +155,13 @@ defmodule GiocciRelay.Worker do
           end
         end
 
+        {module, _binary, _filename} = module_object_code
+        Logger.debug("#{inspect(module)} saved successfully, from #{inspect(client_name)}.")
         :ok
+      else
+        error ->
+          Logger.error("Module save failed, #{inspect(error)}.")
+          error
       end
 
     {:ok, binary} = encode(result)
@@ -165,10 +180,18 @@ defmodule GiocciRelay.Worker do
 
     result =
       with {:ok, recv_term} <- decode(binary),
-           {:ok, {_mfargs, client_name}} <- extract_exec_func(recv_term),
+           {:ok, {mfargs, client_name}} <- extract_exec_func(recv_term),
            :ok <- ensure_client_registered(client_name, registered_clients),
            {:ok, engine_name} <- select_engine(registered_engines) do
+        Logger.debug(
+          "#{inspect(engine_name)} is selected for #{inspect(client_name)}'s #{inspect(mfargs)}."
+        )
+
         {:ok, %{engine_name: engine_name}}
+      else
+        error ->
+          Logger.error("Inquiry engine failed, #{inspect(error)}.")
+          error
       end
 
     {:ok, binary} = encode(result)
