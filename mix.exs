@@ -8,6 +8,13 @@ defmodule Giocci.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       releases: [
+        giocci_client: [
+          include_executables_for: [:unix],
+          applications: [giocci_client: :permanent],
+          config_providers: [
+            {Config.Reader, {:system, "RELEASE_ROOT", "/giocci_client.exs"}}
+          ]
+        ],
         giocci_relay: [
           include_executables_for: [:unix],
           applications: [giocci_relay: :permanent],
