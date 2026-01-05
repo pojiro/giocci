@@ -69,11 +69,15 @@ defmodule GiocciRelay.Worker do
   def handle_continue({:save_module, engine_name}, state) do
     session_id = state.session_id
     key_prefix = state.key_prefix
+    relay_name = state.relay_name
 
     with key <- Path.join(key_prefix, "giocci/save_module/relay/#{engine_name}"),
-         {:ok, module_object_code_list} <- GiocciRelay.ModuleStore.get(),
-         {:ok, binary} <- encode(module_object_code_list) do
-      {:ok, _binary} = zenohex_get(session_id, key, _timeout = 5000, binary)
+         {:ok, client_modules_map} <- GiocciRelay.ModuleStore.get(),
+         {:ok, binary} <-
+           encode(%{relay_name: relay_name, client_modules_map: client_modules_map}),
+         {:ok, binary} <- zenohex_get(session_id, key, _timeout = 5000, binary),
+         {:ok, recv_term} <- decode(binary) do
+      :ok = recv_term
     end
 
     {:noreply, state}
@@ -136,6 +140,7 @@ defmodule GiocciRelay.Worker do
         %Zenohex.Query{key_expr: save_module_key, payload: binary, zenoh_query: zenoh_query},
         %{save_module_key: save_module_key} = state
       ) do
+    relay_name = state.relay_name
     session_id = state.session_id
     key_prefix = state.key_prefix
     registered_engines = state.registered_engines
@@ -145,13 +150,18 @@ defmodule GiocciRelay.Worker do
       with {:ok, recv_term} <- decode(binary),
            {:ok, {module_object_code, timeout, client_name}} <- extract_save_module(recv_term),
            :ok <- ensure_client_registered(client_name, registered_clients),
-           :ok <- GiocciRelay.ModuleStore.put(module_object_code) do
+           :ok <- GiocciRelay.ModuleStore.put(client_name, module_object_code) do
+        send_term = %{
+          relay_name: relay_name,
+          client_modules_map: %{client_name => [module_object_code]}
+        }
+
         for engine_name <- registered_engines do
           with key <- Path.join(key_prefix, "giocci/save_module/relay/#{engine_name}"),
-               {:ok, binary} <- encode(module_object_code),
+               {:ok, binary} <- encode(send_term),
                {:ok, binary} <- zenohex_get(session_id, key, timeout, binary),
                {:ok, recv_term} <- decode(binary) do
-            recv_term
+            :ok = recv_term
           end
         end
 

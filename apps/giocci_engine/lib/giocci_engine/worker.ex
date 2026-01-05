@@ -46,6 +46,7 @@ defmodule GiocciEngine.Worker do
 
     send_term = %{engine_name: engine_name}
 
+    # Register this Engine to the specified Relay when starts
     :ok =
       with key <- Path.join(key_prefix, "giocci/register/engine/#{relay_name}"),
            {:ok, binary} <- encode(send_term),
@@ -76,9 +77,13 @@ defmodule GiocciEngine.Worker do
         %Zenohex.Query{key_expr: save_module_key, payload: binary, zenoh_query: zenoh_query},
         %{save_module_key: save_module_key} = state
       ) do
+    relay_name = state.relay_name
+
     result =
       with {:ok, recv_term} <- decode(binary),
-           :ok <- save_module(recv_term) do
+           {:ok, {received_relay_name, client_modules_map}} <- extract_save_module(recv_term),
+           :ok <- verify_relay_name(relay_name, received_relay_name),
+           :ok <- save_module(client_modules_map) do
         Logger.debug("Module saved successfully.")
         :ok
       else
@@ -176,6 +181,25 @@ defmodule GiocciEngine.Worker do
     ArgumentError -> {:error, :decode_failed}
   end
 
+  defp extract_save_module(term) do
+    %{
+      relay_name: relay_name,
+      client_modules_map: client_modules_map
+    } = term
+
+    {:ok, {relay_name, client_modules_map}}
+  rescue
+    MatchError -> {:error, :term_not_expected}
+  end
+
+  defp verify_relay_name(registered, received) do
+    if registered == received do
+      :ok
+    else
+      {:error, :received_relay_name_is_invalid}
+    end
+  end
+
   defp save_module({module, binary, filename} = _module_object_code) do
     case :code.load_binary(module, filename, binary) do
       {:module, _module} -> :ok
@@ -194,6 +218,14 @@ defmodule GiocciEngine.Worker do
     else
       {:error, :save_module_failed}
     end
+  end
+
+  defp save_module(client_modules_map) when is_map(client_modules_map) do
+    client_modules_map
+    |> Enum.reduce([], fn {_client, module_object_code_list}, acc ->
+      [module_object_code_list | acc]
+    end)
+    |> save_module()
   end
 
   defp exec_func({m, f, args} = mfargs) do
