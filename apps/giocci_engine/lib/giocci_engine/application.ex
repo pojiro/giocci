@@ -13,9 +13,27 @@ defmodule GiocciEngine.Application do
     relay_name = Application.fetch_env!(:giocci_engine, :relay_name)
 
     children = [
-      {GiocciEngine.Worker,
+      {GiocciEngine.SessionManager, [zenoh_config_file_path: zenoh_config_file_path]},
+      {GiocciEngine.ModuleSaver,
        [
-         zenoh_config_file_path: zenoh_config_file_path,
+         engine_name: engine_name,
+         key_prefix: key_prefix,
+         relay_name: relay_name
+       ]},
+      {GiocciEngine.ExecFuncHandler,
+       [
+         engine_name: engine_name,
+         key_prefix: key_prefix,
+         relay_name: relay_name
+       ]},
+      {GiocciEngine.ExecFuncAsyncHandler,
+       [
+         engine_name: engine_name,
+         key_prefix: key_prefix,
+         relay_name: relay_name
+       ]},
+      {GiocciEngine.EngineRegistrar,
+       [
          engine_name: engine_name,
          key_prefix: key_prefix,
          relay_name: relay_name
