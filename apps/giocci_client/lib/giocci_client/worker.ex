@@ -4,23 +4,36 @@ defmodule GiocciClient.Worker do
   use GenServer
 
   @worker_name __MODULE__
+  @default_timeout 5000
 
   # API
 
   def register_client(relay_name, opts \\ []) do
-    GenServer.call(@worker_name, {:register_client, relay_name, opts})
+    timeout = Keyword.get(opts, :timeout, @default_timeout)
+    opts = Keyword.put(opts, :timeout, timeout)
+
+    GenServer.call(@worker_name, {:register_client, relay_name, opts}, :infinity)
   end
 
   def save_module(relay_name, module, opts \\ []) do
-    GenServer.call(@worker_name, {:save_module, relay_name, module, opts})
+    timeout = Keyword.get(opts, :timeout, @default_timeout)
+    opts = Keyword.put(opts, :timeout, timeout)
+
+    GenServer.call(@worker_name, {:save_module, relay_name, module, opts}, :infinity)
   end
 
   def exec_func(relay_name, mfargs, opts \\ []) do
-    GenServer.call(@worker_name, {:exec_func, relay_name, mfargs, opts})
+    timeout = Keyword.get(opts, :timeout, @default_timeout)
+    opts = Keyword.put(opts, :timeout, timeout)
+
+    GenServer.call(@worker_name, {:exec_func, relay_name, mfargs, opts}, :infinity)
   end
 
   def exec_func_async(relay_name, mfargs, server, opts \\ []) do
-    GenServer.call(@worker_name, {:exec_func_async, relay_name, mfargs, server, opts})
+    timeout = Keyword.get(opts, :timeout, @default_timeout)
+    opts = Keyword.put(opts, :timeout, timeout)
+
+    GenServer.call(@worker_name, {:exec_func_async, relay_name, mfargs, server, opts}, :infinity)
   end
 
   def start_link(args) do
@@ -48,7 +61,7 @@ defmodule GiocciClient.Worker do
 
     session_id = GiocciClient.SessionManager.session_id()
 
-    timeout = Keyword.get(opts, :timeout, 5000)
+    timeout = Keyword.fetch!(opts, :timeout)
 
     send_term = %{client_name: client_name}
 
@@ -74,7 +87,7 @@ defmodule GiocciClient.Worker do
 
     session_id = GiocciClient.SessionManager.session_id()
 
-    timeout = Keyword.get(opts, :timeout, 5000)
+    timeout = Keyword.fetch!(opts, :timeout)
 
     send_term =
       %{
@@ -103,7 +116,7 @@ defmodule GiocciClient.Worker do
 
     session_id = GiocciClient.SessionManager.session_id()
 
-    timeout = Keyword.get(opts, :timeout, 5000)
+    timeout = Keyword.fetch!(opts, :timeout)
 
     send_term =
       %{
@@ -135,7 +148,7 @@ defmodule GiocciClient.Worker do
 
     session_id = GiocciClient.SessionManager.session_id()
 
-    timeout = Keyword.get(opts, :timeout, 5000)
+    timeout = Keyword.fetch!(opts, :timeout)
 
     exec_id = make_ref()
 
