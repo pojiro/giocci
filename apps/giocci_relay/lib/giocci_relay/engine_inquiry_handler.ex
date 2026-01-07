@@ -28,7 +28,6 @@ defmodule GiocciRelay.EngineInquiryHandler do
      %{
        relay_name: relay_name,
        key_prefix: key_prefix,
-       session_id: session_id,
        inquiry_engine_key: inquiry_engine_key,
        inquiry_engine_queryable_id: inquiry_engine_queryable_id
      }}

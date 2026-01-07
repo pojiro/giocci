@@ -30,7 +30,6 @@ defmodule GiocciRelay.ClientRegistrar do
      %{
        relay_name: relay_name,
        key_prefix: key_prefix,
-       session_id: session_id,
        register_client_key: register_client_key,
        register_client_queryable_id: register_client_queryable_id,
        registered_clients: []

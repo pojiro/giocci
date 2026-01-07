@@ -26,7 +26,6 @@ defmodule GiocciRelay.ModuleSaver do
      %{
        relay_name: relay_name,
        key_prefix: key_prefix,
-       session_id: session_id,
        save_module_key: save_module_key,
        save_module_queryable_id: save_module_queryable_id
      }}
@@ -38,7 +37,8 @@ defmodule GiocciRelay.ModuleSaver do
       ) do
     relay_name = state.relay_name
     key_prefix = state.key_prefix
-    session_id = state.session_id
+
+    session_id = GiocciRelay.SessionManager.session_id()
 
     result =
       with {:ok, recv_term} <- Utils.decode(binary),

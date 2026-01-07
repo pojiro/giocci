@@ -34,7 +34,6 @@ defmodule GiocciRelay.EngineRegistrar do
      %{
        relay_name: relay_name,
        key_prefix: key_prefix,
-       session_id: session_id,
        register_engine_key: register_engine_key,
        register_engine_queryable_id: register_engine_queryable_id,
        registered_engines: []
@@ -47,8 +46,9 @@ defmodule GiocciRelay.EngineRegistrar do
       ) do
     relay_name = state.relay_name
     key_prefix = state.key_prefix
-    session_id = state.session_id
     registered_engines = state.registered_engines
+
+    session_id = GiocciRelay.SessionManager.session_id()
 
     {result, state} =
       with {:ok, %{engine_name: engine_name}} <- Utils.decode(binary),
