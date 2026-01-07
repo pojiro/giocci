@@ -3,6 +3,8 @@ defmodule GiocciClient.Worker do
 
   use GenServer
 
+  alias GiocciClient.ExecFuncAsyncStore
+
   @worker_name __MODULE__
   @default_timeout 5000
 
@@ -170,7 +172,7 @@ defmodule GiocciClient.Worker do
            {:ok, subscriber_id} <- Zenohex.Session.declare_subscriber(session_id, key),
            key <- Path.join(key_prefix, "giocci/exec_func_async/client/#{engine_name}"),
            :ok <- Zenohex.Session.put(session_id, key, send_binary) do
-        GiocciClient.Store.put(exec_id, %{server: server, subscriber_id: subscriber_id})
+        ExecFuncAsyncStore.put(exec_id, %{server: server, subscriber_id: subscriber_id})
       end
 
     {:reply, result, state}
@@ -179,9 +181,9 @@ defmodule GiocciClient.Worker do
   def handle_info(%Zenohex.Sample{payload: binary}, state) do
     with {:ok, recv_term} <- decode(binary),
          {:ok, %{exec_id: exec_id, result: result}} <- recv_term,
-         %{server: server, subscriber_id: subscriber_id} <- GiocciClient.Store.get(exec_id) do
+         %{server: server, subscriber_id: subscriber_id} <- ExecFuncAsyncStore.get(exec_id) do
       send(server, {:giocci_client, result})
-      :ok = GiocciClient.Store.delete(exec_id)
+      :ok = ExecFuncAsyncStore.delete(exec_id)
       :ok = Zenohex.Subscriber.undeclare(subscriber_id)
     end
 

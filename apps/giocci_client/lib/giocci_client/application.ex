@@ -12,7 +12,7 @@ defmodule GiocciClient.Application do
     key_prefix = Application.get_env(:giocci_client, :key_prefix, "")
 
     children = [
-      {GiocciClient.Store, []},
+      {GiocciClient.ExecFuncAsyncStore, []},
       {GiocciClient.SessionManager, [zenoh_config_file_path: zenoh_config_file_path]},
       {GiocciClient.Worker,
        [
