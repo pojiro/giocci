@@ -39,3 +39,9 @@ jobs:
         run: |
           zenohd &
           mix test --no-start
+
+      - name: format
+        run: mix format --check-formatted
+
+      - name: credo
+        run: mix credo
