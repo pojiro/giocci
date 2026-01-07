@@ -193,7 +193,7 @@ defmodule GiocciClient.Worker do
   end
 
   defp decode(payload) do
-    {:ok, :erlang.binary_to_term(payload)}
+    {:ok, :erlang.binary_to_term(payload, [:safe])}
   rescue
     ArgumentError -> {:error, :decode_failed}
   end

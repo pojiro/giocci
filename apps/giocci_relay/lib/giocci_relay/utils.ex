@@ -19,7 +19,7 @@ defmodule GiocciRelay.Utils do
   end
 
   def decode(payload) do
-    {:ok, :erlang.binary_to_term(payload)}
+    {:ok, :erlang.binary_to_term(payload, [:safe])}
   rescue
     ArgumentError -> {:error, :decode_failed}
   end
