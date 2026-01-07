@@ -15,8 +15,7 @@ defmodule GiocciClient do
 
   @doc """
   """
-  @spec exec_func(String.t(), tuple(), keyword()) ::
-          {:ok, result :: term()} | {:error, reason :: term()}
+  @spec exec_func(String.t(), tuple(), keyword()) :: result :: term()
   defdelegate exec_func(relay_name, mfargs, opts \\ []), to: GiocciClient.Worker
 
   @doc """
