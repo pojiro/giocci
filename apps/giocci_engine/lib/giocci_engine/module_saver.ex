@@ -30,7 +30,6 @@ defmodule GiocciEngine.ModuleSaver do
        engine_name: engine_name,
        key_prefix: key_prefix,
        relay_name: relay_name,
-       session_id: session_id,
        save_module_key: save_module_key,
        save_module_queryable_id: save_module_queryable_id
      }}

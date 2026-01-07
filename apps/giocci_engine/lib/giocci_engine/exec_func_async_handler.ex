@@ -30,7 +30,6 @@ defmodule GiocciEngine.ExecFuncAsyncHandler do
        engine_name: engine_name,
        key_prefix: key_prefix,
        relay_name: relay_name,
-       session_id: session_id,
        exec_func_async_key: exec_func_async_key,
        exec_func_async_subscriber_id: exec_func_async_subscriber_id
      }}
@@ -40,7 +39,6 @@ defmodule GiocciEngine.ExecFuncAsyncHandler do
         %Zenohex.Sample{key_expr: exec_func_async_key, payload: binary},
         %{exec_func_async_key: exec_func_async_key} = state
       ) do
-    session_id = state.session_id
     key_prefix = state.key_prefix
 
     fun = fn ->
@@ -60,6 +58,7 @@ defmodule GiocciEngine.ExecFuncAsyncHandler do
              result: result
            }}
 
+        session_id = GiocciEngine.SessionManager.session_id()
         {:ok, binary} = Utils.encode(result)
         :ok = Zenohex.Session.put(session_id, key, binary)
       else

@@ -30,7 +30,6 @@ defmodule GiocciEngine.ExecFuncHandler do
        engine_name: engine_name,
        key_prefix: key_prefix,
        relay_name: relay_name,
-       session_id: session_id,
        exec_func_key: exec_func_key,
        exec_func_queryable_id: exec_func_queryable_id
      }}
