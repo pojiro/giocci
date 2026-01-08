@@ -29,6 +29,7 @@ defmodule GiocciClient.MixProject do
   defp deps do
     [
       {:zenohex, "== 0.7.1"},
+      {:mock, "~> 0.3.0", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end

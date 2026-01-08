@@ -206,6 +206,8 @@ defmodule GiocciClient.Worker do
       {:error, reason} ->
         {:error, "Zenohex.Session.get/4 error: #{inspect(reason)}"}
     end
+  rescue
+    ArgumentError -> {:error, "Zenohex.Session.get/4 error: badarg"}
   end
 
   defp encode(term) do
