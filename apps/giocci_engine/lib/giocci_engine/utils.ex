@@ -34,7 +34,7 @@ defmodule GiocciEngine.Utils do
       {:error, "An unexpected error has occured, #{inspect(unexpected_error)}"}
   end
 
-  def ensure_module_saved(module) do
+  def validate_module_saved(module) do
     if Code.ensure_loaded?(module) do
       :ok
     else

@@ -46,7 +46,7 @@ defmodule GiocciEngine.ExecFuncAsyncHandler do
     fun = fn ->
       with {:ok, recv_term} <- Utils.decode(binary),
            {:ok, {{m, _f, _args} = mfargs, exec_id, client_name}} <- extract(recv_term),
-           :ok <- Utils.ensure_module_saved(m),
+           :ok <- Utils.validate_module_saved(m),
            {:ok, result} <- Utils.exec_func(mfargs),
            key <- Path.join(key_prefix, "giocci/exec_func_async/engine/#{client_name}") do
         Logger.debug("Exec func async successfully, #{inspect(mfargs)}.")

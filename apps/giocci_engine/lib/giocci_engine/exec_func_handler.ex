@@ -45,7 +45,7 @@ defmodule GiocciEngine.ExecFuncHandler do
       result =
         with {:ok, recv_term} <- Utils.decode(binary),
              {:ok, {{m, _f, _args} = mfargs, _client_name}} <- extract(recv_term),
-             :ok <- Utils.ensure_module_saved(m),
+             :ok <- Utils.validate_module_saved(m),
              {:ok, result} <- Utils.exec_func(mfargs) do
           Logger.debug("Exec func successfully, #{inspect(mfargs)}.")
           result

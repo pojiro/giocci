@@ -45,7 +45,7 @@ defmodule GiocciRelay.ModuleSaver do
     result =
       with {:ok, recv_term} <- Utils.decode(binary),
            {:ok, {module_object_code, timeout, client_name}} <- extract(recv_term),
-           :ok <- GiocciRelay.ClientRegistrar.ensure_registered(client_name),
+           :ok <- GiocciRelay.ClientRegistrar.validate_registered(client_name),
            :ok <- GiocciRelay.ModuleStore.put(client_name, module_object_code) do
         send_term = %{
           relay_name: relay_name,

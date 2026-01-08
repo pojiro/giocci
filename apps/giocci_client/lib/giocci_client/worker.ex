@@ -99,8 +99,8 @@ defmodule GiocciClient.Worker do
       }
 
     result =
-      with :ok <- ensure_relay_registered(relay_name, registered_relays),
-           :ok <- ensure_module_found(module),
+      with :ok <- validate_relay_registered(relay_name, registered_relays),
+           :ok <- validate_module_found(module),
            key <- Path.join(key_prefix, "giocci/save_module/client/#{relay_name}"),
            {:ok, binary} <- encode(send_term),
            {:ok, binary} <- zenohex_get(session_id, key, timeout, binary),
@@ -127,7 +127,7 @@ defmodule GiocciClient.Worker do
       }
 
     result =
-      with :ok <- ensure_relay_registered(relay_name, registered_relays),
+      with :ok <- validate_relay_registered(relay_name, registered_relays),
            key <- Path.join(key_prefix, "giocci/inquiry_engine/client/#{relay_name}"),
            {:ok, binary} <- encode(send_term),
            {:ok, binary} <- zenohex_get(session_id, key, timeout, binary),
@@ -162,7 +162,7 @@ defmodule GiocciClient.Worker do
       }
 
     result =
-      with :ok <- ensure_relay_registered(relay_name, registered_relays),
+      with :ok <- validate_relay_registered(relay_name, registered_relays),
            key <- Path.join(key_prefix, "giocci/inquiry_engine/client/#{relay_name}"),
            {:ok, send_binary} <- encode(send_term),
            {:ok, recv_binary} <- zenohex_get(session_id, key, timeout, send_binary),
@@ -218,7 +218,7 @@ defmodule GiocciClient.Worker do
     ArgumentError -> {:error, :decode_failed}
   end
 
-  defp ensure_module_found(module) do
+  defp validate_module_found(module) do
     if Code.ensure_loaded?(module) do
       :ok
     else
@@ -226,7 +226,7 @@ defmodule GiocciClient.Worker do
     end
   end
 
-  defp ensure_relay_registered(relay_name, registered_relays) do
+  defp validate_relay_registered(relay_name, registered_relays) do
     if relay_name in registered_relays do
       :ok
     else

@@ -9,8 +9,8 @@ defmodule GiocciRelay.ClientRegistrar do
 
   @worker_name __MODULE__
 
-  def ensure_registered(client_name) do
-    GenServer.call(@worker_name, {:ensure_registered, client_name})
+  def validate_registered(client_name) do
+    GenServer.call(@worker_name, {:validate_registered, client_name})
   end
 
   def start_link(args) do
@@ -61,7 +61,7 @@ defmodule GiocciRelay.ClientRegistrar do
     {:noreply, state}
   end
 
-  def handle_call({:ensure_registered, client_name}, _from, state) do
+  def handle_call({:validate_registered, client_name}, _from, state) do
     result =
       if client_name in state.registered_clients do
         :ok

@@ -42,7 +42,7 @@ defmodule GiocciRelay.EngineInquiryHandler do
     result =
       with {:ok, recv_term} <- Utils.decode(binary),
            {:ok, {mfargs, client_name}} <- extract(recv_term),
-           :ok <- GiocciRelay.ClientRegistrar.ensure_registered(client_name),
+           :ok <- GiocciRelay.ClientRegistrar.validate_registered(client_name),
            {:ok, engine_name} <- GiocciRelay.EngineRegistrar.select_engine() do
         Logger.debug(
           "#{inspect(engine_name)} is selected for #{inspect(client_name)}'s #{inspect(mfargs)}."
