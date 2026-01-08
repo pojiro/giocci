@@ -3,16 +3,16 @@ defmodule GiocciClient.SessionManager do
 
   use GenServer
 
-  @worker_name __MODULE__
+  @name __MODULE__
 
   # API
 
   def session_id() do
-    GenServer.call(@worker_name, :session_id)
+    GenServer.call(@name, :session_id)
   end
 
   def start_link(args) do
-    GenServer.start_link(__MODULE__, args, name: @worker_name)
+    GenServer.start_link(__MODULE__, args, name: @name)
   end
 
   # callbacks

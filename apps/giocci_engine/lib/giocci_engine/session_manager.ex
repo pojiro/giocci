@@ -5,7 +5,7 @@ defmodule GiocciEngine.SessionManager do
 
   require Logger
 
-  @worker_name __MODULE__
+  @name __MODULE__
 
   # API
 
@@ -14,7 +14,7 @@ defmodule GiocciEngine.SessionManager do
   end
 
   def start_link(args) do
-    GenServer.start_link(__MODULE__, args, name: @worker_name)
+    GenServer.start_link(__MODULE__, args, name: @name)
   end
 
   def init(args) do

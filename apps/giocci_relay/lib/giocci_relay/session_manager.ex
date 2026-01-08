@@ -5,14 +5,14 @@ defmodule GiocciRelay.SessionManager do
 
   require Logger
 
-  @worker_name __MODULE__
+  @name __MODULE__
 
   def session_id() do
-    GenServer.call(@worker_name, :session_id)
+    GenServer.call(@name, :session_id)
   end
 
   def start_link(args) do
-    GenServer.start_link(__MODULE__, args, name: @worker_name)
+    GenServer.start_link(__MODULE__, args, name: @name)
   end
 
   def init(args) do

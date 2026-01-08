@@ -7,14 +7,14 @@ defmodule GiocciRelay.ClientRegistrar do
 
   alias GiocciRelay.Utils
 
-  @worker_name __MODULE__
+  @name __MODULE__
 
   def validate_registered(client_name) do
-    GenServer.call(@worker_name, {:validate_registered, client_name})
+    GenServer.call(@name, {:validate_registered, client_name})
   end
 
   def start_link(args) do
-    GenServer.start_link(__MODULE__, args, name: @worker_name)
+    GenServer.start_link(__MODULE__, args, name: @name)
   end
 
   def init(args) do

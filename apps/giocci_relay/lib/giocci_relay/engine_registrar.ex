@@ -7,18 +7,18 @@ defmodule GiocciRelay.EngineRegistrar do
 
   alias GiocciRelay.Utils
 
-  @worker_name __MODULE__
+  @name __MODULE__
 
   def registered_engines() do
-    GenServer.call(@worker_name, :registered_engines)
+    GenServer.call(@name, :registered_engines)
   end
 
   def select_engine() do
-    GenServer.call(@worker_name, :select_engine)
+    GenServer.call(@name, :select_engine)
   end
 
   def start_link(args) do
-    GenServer.start_link(__MODULE__, args, name: @worker_name)
+    GenServer.start_link(__MODULE__, args, name: @name)
   end
 
   def init(args) do

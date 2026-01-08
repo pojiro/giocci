@@ -5,7 +5,7 @@ defmodule GiocciClient.Worker do
 
   alias GiocciClient.ExecFuncAsyncStore
 
-  @worker_name __MODULE__
+  @name __MODULE__
   @default_timeout 5000
 
   # API
@@ -14,32 +14,32 @@ defmodule GiocciClient.Worker do
     timeout = Keyword.get(opts, :timeout, @default_timeout)
     opts = Keyword.put(opts, :timeout, timeout)
 
-    GenServer.call(@worker_name, {:register_client, relay_name, opts}, :infinity)
+    GenServer.call(@name, {:register_client, relay_name, opts}, :infinity)
   end
 
   def save_module(relay_name, module, opts \\ []) do
     timeout = Keyword.get(opts, :timeout, @default_timeout)
     opts = Keyword.put(opts, :timeout, timeout)
 
-    GenServer.call(@worker_name, {:save_module, relay_name, module, opts}, :infinity)
+    GenServer.call(@name, {:save_module, relay_name, module, opts}, :infinity)
   end
 
   def exec_func(relay_name, mfargs, opts \\ []) do
     timeout = Keyword.get(opts, :timeout, @default_timeout)
     opts = Keyword.put(opts, :timeout, timeout)
 
-    GenServer.call(@worker_name, {:exec_func, relay_name, mfargs, opts}, :infinity)
+    GenServer.call(@name, {:exec_func, relay_name, mfargs, opts}, :infinity)
   end
 
   def exec_func_async(relay_name, mfargs, server, opts \\ []) do
     timeout = Keyword.get(opts, :timeout, @default_timeout)
     opts = Keyword.put(opts, :timeout, timeout)
 
-    GenServer.call(@worker_name, {:exec_func_async, relay_name, mfargs, server, opts}, :infinity)
+    GenServer.call(@name, {:exec_func_async, relay_name, mfargs, server, opts}, :infinity)
   end
 
   def start_link(args) do
-    GenServer.start_link(__MODULE__, args, name: @worker_name)
+    GenServer.start_link(__MODULE__, args, name: @name)
   end
 
   # callbacks
