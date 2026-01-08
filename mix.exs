@@ -7,6 +7,7 @@ defmodule Giocci.MixProject do
       version: "0.1.0",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      aliases: aliases(),
       releases: [
         giocci_client: [
           include_executables_for: [:unix],
@@ -42,6 +43,12 @@ defmodule Giocci.MixProject do
     [
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+    ]
+  end
+
+  defp aliases do
+    [
+      test: ["test --no-start"]
     ]
   end
 end

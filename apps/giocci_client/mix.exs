@@ -12,6 +12,7 @@ defmodule GiocciClient.MixProject do
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      aliases: aliases(),
       description: description(),
       package: package()
     ]
@@ -44,6 +45,12 @@ defmodule GiocciClient.MixProject do
       files: ~w(lib .formatter.exs mix.exs README* LICENSE*),
       licenses: ["Apache-2.0"],
       links: %{"GitHub" => "https://github.com/biyooon-ex/giocci"}
+    ]
+  end
+
+  defp aliases do
+    [
+      test: ["test --no-start"]
     ]
   end
 end

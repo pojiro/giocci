@@ -11,7 +11,8 @@ defmodule GiocciIntegration.MixProject do
       lockfile: "../../mix.lock",
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      aliases: aliases()
     ]
   end
 
@@ -28,6 +29,12 @@ defmodule GiocciIntegration.MixProject do
       {:giocci_relay, in_umbrella: true},
       {:giocci_engine, in_umbrella: true},
       {:giocci_client, in_umbrella: true}
+    ]
+  end
+
+  defp aliases do
+    [
+      test: ["test --no-start"]
     ]
   end
 end

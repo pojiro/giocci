@@ -11,7 +11,8 @@ defmodule GiocciEngine.MixProject do
       lockfile: "../../mix.lock",
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      aliases: aliases()
     ]
   end
 
@@ -27,6 +28,12 @@ defmodule GiocciEngine.MixProject do
   defp deps do
     [
       {:zenohex, "== 0.7.1"}
+    ]
+  end
+
+  defp aliases do
+    [
+      test: ["test --no-start"]
     ]
   end
 end
