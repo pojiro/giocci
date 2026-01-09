@@ -10,6 +10,7 @@ defmodule CheckVersions do
       |> check_root_dockerfile(versions)
       |> check_apps_dockerfiles(versions)
       |> check_docker_compose(versions)
+      |> check_app_docker_compose(versions)
       |> check_mix_exs(versions)
       |> check_tool_versions(versions)
 
@@ -137,6 +138,28 @@ defmodule CheckVersions do
       "zenohd image tag mismatch",
       "zenohd:#{zenoh_version}"
     )
+  end
+
+  defp check_app_docker_compose(errors, versions) do
+    project_version = versions["PROJECT_VERSION"]
+
+    [
+      "apps/giocci_client/docker-compose.yml",
+      "apps/giocci_engine/docker-compose.yml",
+      "apps/giocci_relay/docker-compose.yml"
+    ]
+    |> Enum.reduce(errors, fn file, acc ->
+      content = File.read!(file)
+
+      check_match(
+        acc,
+        file,
+        content,
+        ~r/image:\s+\S+:#{Regex.escape(project_version)}/,
+        "image tag mismatch",
+        project_version
+      )
+    end)
   end
 
   defp check_mix_exs(errors, versions) do
