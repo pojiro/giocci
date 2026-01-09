@@ -215,6 +215,7 @@ defmodule GiocciClient.Worker do
   end
 
   defp decode(payload) do
+    # We pass the `safe` option to protect user's Erlang VM.
     {:ok, :erlang.binary_to_term(payload, [:safe])}
   rescue
     ArgumentError -> {:error, :decode_failed}
