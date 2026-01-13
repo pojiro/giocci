@@ -8,3 +8,8 @@ services:
       - ./config/giocci_relay.exs:/root/giocci_relay/giocci_relay.exs:ro
       - ./config/zenoh.json:/root/giocci_relay/zenoh.json:ro
     restart: "always"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
