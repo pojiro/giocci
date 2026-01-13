@@ -25,6 +25,5 @@ ENV MIX_ENV=prod
 ENV LANG=C.UTF-8
 
 COPY --from=builder /root/_build/prod/rel/giocci_engine giocci_engine
-RUN mkdir -p /root/log
 
 CMD ["/root/giocci_engine/bin/giocci_engine", "start"]

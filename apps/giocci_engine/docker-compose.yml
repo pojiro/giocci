@@ -7,5 +7,4 @@ services:
     volumes:
       - ./config/giocci_engine.exs:/root/giocci_engine/giocci_engine.exs:ro
       - ./config/zenoh.json:/root/giocci_engine/zenoh.json:ro
-      - ./tmp/log:/root/log:rw
     restart: "always"

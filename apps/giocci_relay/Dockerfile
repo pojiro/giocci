@@ -25,6 +25,5 @@ ENV MIX_ENV=prod
 ENV LANG=C.UTF-8
 
 COPY --from=builder /root/_build/prod/rel/giocci_relay giocci_relay
-RUN mkdir -p /root/log
 
 CMD ["/root/giocci_relay/bin/giocci_relay", "start"]
