@@ -4,6 +4,7 @@ defmodule GiocciClient.Worker do
   use GenServer
 
   alias GiocciClient.ExecFuncAsyncStore
+  alias GiocciClient.Utils
 
   @name __MODULE__
   @default_timeout 5000
@@ -69,9 +70,9 @@ defmodule GiocciClient.Worker do
 
     {result, state} =
       with key <- Path.join(key_prefix, "giocci/register/client/#{relay_name}"),
-           {:ok, binary} <- encode(send_term),
-           {:ok, binary} <- zenohex_get(session_id, key, timeout, binary),
-           {:ok, recv_term} <- decode(binary),
+           {:ok, binary} <- Utils.encode(send_term),
+           {:ok, binary} <- Utils.zenohex_get(session_id, key, timeout, binary),
+           {:ok, recv_term} <- Utils.decode(binary),
            :ok <- recv_term do
         registered_relays = [relay_name | registered_relays] |> Enum.uniq()
         {:ok, %{state | registered_relays: registered_relays}}
@@ -102,9 +103,9 @@ defmodule GiocciClient.Worker do
       with :ok <- validate_relay_registered(relay_name, registered_relays),
            :ok <- validate_module_found(module),
            key <- Path.join(key_prefix, "giocci/save_module/client/#{relay_name}"),
-           {:ok, binary} <- encode(send_term),
-           {:ok, binary} <- zenohex_get(session_id, key, timeout, binary),
-           {:ok, recv_term} <- decode(binary) do
+           {:ok, binary} <- Utils.encode(send_term),
+           {:ok, binary} <- Utils.zenohex_get(session_id, key, timeout, binary),
+           {:ok, recv_term} <- Utils.decode(binary) do
         recv_term
       end
 
@@ -129,14 +130,14 @@ defmodule GiocciClient.Worker do
     result =
       with :ok <- validate_relay_registered(relay_name, registered_relays),
            key <- Path.join(key_prefix, "giocci/inquiry_engine/client/#{relay_name}"),
-           {:ok, binary} <- encode(send_term),
-           {:ok, binary} <- zenohex_get(session_id, key, timeout, binary),
-           {:ok, recv_term} <- decode(binary),
+           {:ok, binary} <- Utils.encode(send_term),
+           {:ok, binary} <- Utils.zenohex_get(session_id, key, timeout, binary),
+           {:ok, recv_term} <- Utils.decode(binary),
            {:ok, %{engine_name: engine_name}} <- recv_term,
            key <- Path.join(key_prefix, "giocci/exec_func/client/#{engine_name}"),
-           {:ok, binary} <- encode(send_term),
-           {:ok, binary} <- zenohex_get(session_id, key, timeout, binary),
-           {:ok, recv_term} <- decode(binary) do
+           {:ok, binary} <- Utils.encode(send_term),
+           {:ok, binary} <- Utils.zenohex_get(session_id, key, timeout, binary),
+           {:ok, recv_term} <- Utils.decode(binary) do
         recv_term
       end
 
@@ -164,9 +165,9 @@ defmodule GiocciClient.Worker do
     result =
       with :ok <- validate_relay_registered(relay_name, registered_relays),
            key <- Path.join(key_prefix, "giocci/inquiry_engine/client/#{relay_name}"),
-           {:ok, send_binary} <- encode(send_term),
-           {:ok, recv_binary} <- zenohex_get(session_id, key, timeout, send_binary),
-           {:ok, recv_term} <- decode(recv_binary),
+           {:ok, send_binary} <- Utils.encode(send_term),
+           {:ok, recv_binary} <- Utils.zenohex_get(session_id, key, timeout, send_binary),
+           {:ok, recv_term} <- Utils.decode(recv_binary),
            {:ok, %{engine_name: engine_name}} <- recv_term,
            key <- Path.join(key_prefix, "giocci/exec_func_async/engine/#{client_name}"),
            {:ok, subscriber_id} <- Zenohex.Session.declare_subscriber(session_id, key),
@@ -184,7 +185,7 @@ defmodule GiocciClient.Worker do
   end
 
   def handle_info(%Zenohex.Sample{payload: binary}, state) do
-    with {:ok, recv_term} <- decode(binary),
+    with {:ok, recv_term} <- Utils.decode(binary),
          {:ok, %{exec_id: exec_id, result: result}} <- recv_term,
          %{server: server, subscriber_id: subscriber_id} <- ExecFuncAsyncStore.get(exec_id) do
       send(server, {:giocci_client, result})
@@ -193,32 +194,6 @@ defmodule GiocciClient.Worker do
     end
 
     {:noreply, state}
-  end
-
-  defp zenohex_get(session_id, key, timeout, payload) do
-    case Zenohex.Session.get(session_id, key, timeout, payload: payload) do
-      {:ok, [%Zenohex.Sample{payload: payload}]} ->
-        {:ok, payload}
-
-      {:error, :timeout} ->
-        {:error, "timeout"}
-
-      {:error, reason} ->
-        {:error, "zenohex_error: #{inspect(reason)}"}
-    end
-  rescue
-    ArgumentError -> {:error, "zenohex_error: badarg"}
-  end
-
-  defp encode(term) do
-    {:ok, :erlang.term_to_binary(term)}
-  end
-
-  defp decode(payload) do
-    # We pass the `safe` option to protect user's Erlang VM.
-    {:ok, :erlang.binary_to_term(payload, [:safe])}
-  rescue
-    ArgumentError -> {:error, "decode_failed"}
   end
 
   defp validate_module_found(module) do
