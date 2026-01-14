@@ -4,86 +4,154 @@ defmodule GiocciIntegrationTest do
   @moduletag capture_log: true
 
   @relay_name "giocci_relay"
+  @engine_name "giocci_engine"
+  @client_name "giocci_client"
+
+  # Timeout for waiting engine response after it's stopped
+  @engine_stopped_timeout 1000
+  # Timeout for async message delivery
+  @async_message_timeout 1000
+
+  # Common setup for starting relay and client
+  defp setup_relay_and_client do
+    :ok = Application.put_env(:giocci_relay, :relay_name, @relay_name)
+    {:ok, _} = Application.ensure_all_started(:giocci_relay)
+
+    :ok = Application.put_env(:giocci_client, :client_name, @client_name)
+    {:ok, _} = Application.ensure_all_started(:giocci_client)
+
+    on_exit(fn ->
+      :ok = Application.stop(:giocci_client)
+      :ok = Application.delete_env(:giocci_client, :client_name)
+
+      :ok = Application.stop(:giocci_relay)
+      :ok = Application.delete_env(:giocci_relay, :relay_name)
+    end)
+  end
+
+  # Setup for starting engine
+  defp setup_engine do
+    :ok = Application.put_env(:giocci_engine, :engine_name, @engine_name)
+    :ok = Application.put_env(:giocci_engine, :relay_name, @relay_name)
+    {:ok, _} = Application.ensure_all_started(:giocci_engine)
+
+    on_exit(fn ->
+      cleanup_engine()
+    end)
+  end
+
+  # Cleanup engine application
+  defp cleanup_engine do
+    Application.stop(:giocci_engine)
+    Application.delete_env(:giocci_engine, :engine_name)
+    Application.delete_env(:giocci_engine, :relay_name)
+    :ok
+  end
 
   describe "happy path" do
     setup do
-      :ok = Application.put_env(:giocci_relay, :relay_name, @relay_name)
-      {:ok, _} = Application.ensure_all_started(:giocci_relay)
-
-      :ok = Application.put_env(:giocci_engine, :engine_name, "giocci_engine")
-      :ok = Application.put_env(:giocci_engine, :relay_name, @relay_name)
-      {:ok, _} = Application.ensure_all_started(:giocci_engine)
-
-      :ok = Application.put_env(:giocci_client, :client_name, "giocci_client")
-      {:ok, _} = Application.ensure_all_started(:giocci_client)
-
-      on_exit(fn ->
-        :ok = Application.delete_env(:giocci_relay, :relay_name)
-        :ok = Application.stop(:giocci_relay)
-
-        :ok = Application.delete_env(:giocci_engine, :engine_name)
-        :ok = Application.stop(:giocci_engine)
-
-        :ok = Application.delete_env(:giocci_client, :client_name)
-        :ok = Application.stop(:giocci_client)
-      end)
-
+      setup_relay_and_client()
+      setup_engine()
       :ok
     end
 
     test "normal scenario" do
-      assert :ok = GiocciClient.register_client(@relay_name)
-      assert :ok = GiocciClient.save_module(@relay_name, GiocciIntegration)
-      assert 3 = GiocciClient.exec_func(@relay_name, {GiocciIntegration, :add, [1, 2]})
+      assert :ok == GiocciClient.register_client(@relay_name)
+      assert :ok == GiocciClient.save_module(@relay_name, GiocciIntegration)
+      assert 3 == GiocciClient.exec_func(@relay_name, {GiocciIntegration, :add, [1, 2]})
 
-      assert {:error, "function_not_defined: {GiocciIntegration, :undefined_function, []}"} =
+      assert {:error, "function_not_defined: {GiocciIntegration, :undefined_function, []}"} ==
                GiocciClient.exec_func(@relay_name, {GiocciIntegration, :undefined_function, []})
 
       :ok = GiocciClient.exec_func_async(@relay_name, {GiocciIntegration, :add, [1, 2]}, self())
 
-      assert_receive {:giocci_client, 3}
+      assert_receive {:giocci_client, 3},
+                     @async_message_timeout,
+                     "Expected async response with result 3"
     end
   end
 
-  describe "engine start timing," do
+  describe "engine start timing" do
     setup do
-      :ok = Application.put_env(:giocci_relay, :relay_name, @relay_name)
-      {:ok, _} = Application.ensure_all_started(:giocci_relay)
+      setup_relay_and_client()
 
-      :ok = Application.put_env(:giocci_engine, :engine_name, "giocci_engine")
+      :ok = Application.put_env(:giocci_engine, :engine_name, @engine_name)
       :ok = Application.put_env(:giocci_engine, :relay_name, @relay_name)
 
-      :ok = Application.put_env(:giocci_client, :client_name, "giocci_client")
-      {:ok, _} = Application.ensure_all_started(:giocci_client)
-
       on_exit(fn ->
-        :ok = Application.delete_env(:giocci_relay, :relay_name)
-        :ok = Application.stop(:giocci_relay)
-
-        :ok = Application.delete_env(:giocci_engine, :engine_name)
-        :ok = Application.stop(:giocci_engine)
-
-        :ok = Application.delete_env(:giocci_client, :client_name)
-        :ok = Application.stop(:giocci_client)
+        cleanup_engine()
       end)
 
       :ok
     end
 
-    test "engine starts before GiocciClient.save_module/2" do
-      assert :ok = GiocciClient.register_client(@relay_name)
+    test "engine starts before save_module - modules are distributed on registration" do
+      assert :ok == GiocciClient.register_client(@relay_name)
       {:ok, _} = Application.ensure_all_started(:giocci_engine)
-      assert :ok = GiocciClient.save_module(@relay_name, GiocciIntegration)
+      assert :ok == GiocciClient.save_module(@relay_name, GiocciIntegration)
 
-      assert 3 = GiocciClient.exec_func(@relay_name, {GiocciIntegration, :add, [1, 2]})
+      assert 3 == GiocciClient.exec_func(@relay_name, {GiocciIntegration, :add, [1, 2]})
     end
 
-    test "engine starts after GiocciClient.save_module/2" do
-      assert :ok = GiocciClient.register_client(@relay_name)
-      assert :ok = GiocciClient.save_module(@relay_name, GiocciIntegration)
+    test "engine starts after save_module - modules are distributed on engine registration" do
+      assert :ok == GiocciClient.register_client(@relay_name)
+      assert :ok == GiocciClient.save_module(@relay_name, GiocciIntegration)
       {:ok, _} = Application.ensure_all_started(:giocci_engine)
 
-      assert 3 = GiocciClient.exec_func(@relay_name, {GiocciIntegration, :add, [1, 2]})
+      assert 3 == GiocciClient.exec_func(@relay_name, {GiocciIntegration, :add, [1, 2]})
+    end
+  end
+
+  describe "error cases" do
+    test "relay not started - register_client fails" do
+      :ok = Application.put_env(:giocci_client, :client_name, @client_name)
+      {:ok, _} = Application.ensure_all_started(:giocci_client)
+
+      on_exit(fn ->
+        :ok = Application.stop(:giocci_client)
+        :ok = Application.delete_env(:giocci_client, :client_name)
+      end)
+
+      result = GiocciClient.register_client(@relay_name)
+      assert {:error, error_msg} = result
+
+      assert String.starts_with?(error_msg, "zenohex_error: "),
+             "Expected zenohex_error but got: #{inspect(result)}"
+    end
+
+    test "relay started but no engine - exec_func fails" do
+      setup_relay_and_client()
+
+      assert :ok == GiocciClient.register_client(@relay_name)
+      assert :ok == GiocciClient.save_module(@relay_name, GiocciIntegration)
+
+      assert {:error, "engine_not_registered"} ==
+               GiocciClient.exec_func(@relay_name, {GiocciIntegration, :add, [1, 2]})
+    end
+
+    test "engine registered then stopped - exec_func fails" do
+      setup_relay_and_client()
+      setup_engine()
+
+      assert :ok == GiocciClient.register_client(@relay_name)
+      assert :ok == GiocciClient.save_module(@relay_name, GiocciIntegration)
+
+      # Engine is working
+      assert 3 == GiocciClient.exec_func(@relay_name, {GiocciIntegration, :add, [1, 2]})
+
+      # Stop engine manually (on_exit will handle cleanup if this fails)
+      cleanup_engine()
+
+      # Engine is no longer available - Zenoh channel is closed
+      result =
+        GiocciClient.exec_func(@relay_name, {GiocciIntegration, :add, [1, 2]},
+          timeout: @engine_stopped_timeout
+        )
+
+      assert {:error, error_msg} = result
+
+      assert String.starts_with?(error_msg, "zenohex_error: "),
+             "Expected zenohex_error after engine stopped but got: #{inspect(result)}"
     end
   end
 end
