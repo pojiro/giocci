@@ -4,41 +4,68 @@
 
 # Giocci
 
-Client Library for Giocci
-
-## Description
-
 Giocci is a computational resource permeating wide-area distributed platform towards the B5G era.
 
-This repository is a library that provides functionality for the client in Giocci environment.
-It should be used with followings which installed onto Giocci server(s).
+## Overview
 
-- [zenod](https://github.com/eclipse-zenoh/zenoh/tree/main/zenohd)
-- [giocci_relay](https://github.com/b5g-ex/giocci/tree/main/apps/giocci_relay)
-- [giocci_engine](https://github.com/b5g-ex/giocci/tree/main/apps/giocci_engine)
+This repository contains the Giocci platform, which enables distributed code execution across wide-area networks. The platform consists of three main components:
 
-The detailed instructions will be appeared ASAP,,,
+- **GiocciClient** - Client library for sending modules and executing functions on remote engines
+- **GiocciRelay** - Relay component that manages client/engine registration and routes requests
+- **GiocciEngine** - Execution engine that loads modules and executes functions
 
-## Installation
+All components communicate over [Zenoh](https://zenoh.io/), a pub/sub/query protocol for distributed systems.
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `giocci` to your list of dependencies in `mix.exs`:
+## Components
 
-```elixir
-def deps do
-  [
-    {:giocci_client, "~> 0.3.0"}
-  ]
-end
-```
+### GiocciClient
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/giocci>.
+An Elixir library that allows applications to:
+- Register with a relay
+- Save Elixir modules to remote engines
+- Execute functions synchronously or asynchronously
 
-## Giocci Communication Flow
+**Installation and usage**: See [apps/giocci_client/README.md](apps/giocci_client/README.md)
 
-This repository communicates over Zenohex (Zenoh) using Query/Reply and Pub/Sub. The sections below summarize the key paths and the main sequences.
+**Hex package**: [giocci_client](https://hex.pm/packages/giocci_client)
+
+### GiocciRelay
+
+A relay service that:
+- Manages client and engine registrations
+- Stores and distributes modules to engines
+- Routes execution requests between clients and engines
+
+**Deployment guide**: See [apps/giocci_relay/README.md](apps/giocci_relay/README.md)
+
+### GiocciEngine
+
+An execution engine that:
+- Receives and loads modules dynamically
+- Executes functions on behalf of clients
+- Returns results synchronously or asynchronously
+
+**Deployment guide**: See [apps/giocci_engine/README.md](apps/giocci_engine/README.md)
+
+## Prerequisites
+
+All components require:
+- [Zenoh daemon (zenohd)](https://github.com/eclipse-zenoh/zenoh/tree/main/zenohd) running and accessible
+
+## Quick Start
+
+1. **Deploy Zenoh daemon**:
+   ```bash
+   docker compose up -d zenohd
+   ```
+
+2. **Deploy GiocciRelay**: Follow [apps/giocci_relay/README.md](apps/giocci_relay/README.md)
+
+3. **Deploy GiocciEngine**: Follow [apps/giocci_engine/README.md](apps/giocci_engine/README.md)
+
+4. **Use GiocciClient in your application**: Follow [apps/giocci_client/README.md](apps/giocci_client/README.md)
+
+## Architecture
 
 ### Components
 
@@ -46,6 +73,10 @@ This repository communicates over Zenohex (Zenoh) using Query/Reply and Pub/Sub.
 - Relay: `apps/giocci_relay`
 - Engine: `apps/giocci_engine`
 - Transport: Zenohex (Zenoh) session
+
+### Communication Flow
+
+This platform communicates over Zenohex (Zenoh) using Query/Reply and Pub/Sub patterns.
 
 ### Key Map
 
@@ -146,4 +177,8 @@ sequenceDiagram
 - Client <-> Relay uses Query/Reply; Engine uses Queryable for sync and Subscriber/Publisher for async.
 - All communication is via Zenohex key space; `key_prefix` may be prepended.
 - Engine selection is currently first-registered in `GiocciRelay.EngineRegistrar.select_engine/0`.
+
+## For Developers
+
+See [FOR_DEVELOPERS.md](FOR_DEVELOPERS.md) for development instructions, testing, and release procedures.
 
