@@ -2,10 +2,8 @@ services:
   zenohd:
     build: .
     image: ghcr.io/biyooon-ex/giocci/zenohd:1.7.1
-    working_dir: /root/giocci
     volumes:
-      - .:/root/giocci
+      - .:/app
     ports:
       - "7447:7447"
       - "7446:7446/udp"
-    restart: unless-stopped
