@@ -1,33 +1,60 @@
 # GiocciRelay
 
-**TODO: Add description**
+GiocciRelay is a relay component for the Giocci system that forwards messages between Zenoh networks.
 
-## Installation
+## Prerequisites
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `giocci_relay` to your list of dependencies in `mix.exs`:
+- Docker and Docker Compose installed on your server
+- Access to a Zenoh daemon (zenohd) endpoint
 
-```elixir
-def deps do
-  [
-    {:giocci_relay, "~> 0.1.0"}
-  ]
-end
-```
+## How to run giocci_relay on your server
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/giocci_relay>.
+1. Copy `./config` and `./docker-compose.yml` to your working directory
 
-## How to build/push docker image
+2. Edit `config/zenoh.json` to configure Zenoh connection:
+   - Set `connect.endpoints` to your Zenohd server address (e.g., `["tcp/192.168.1.100:7447"]`)
 
+3. Edit `config/giocci_relay.exs` to configure the relay:
+   - Set `relay_name` to identify this relay instance (e.g., `"my_relay"`)
+   - Set `zenoh_config_file_path` if you changed the config file location
+
+4. Start the relay:
+   ```bash
+   docker compose up -d
+   ```
+
+5. Check logs:
+   ```bash
+   docker compose logs -f giocci_relay
+   ```
+
+## Managing the relay
+
+Stop the relay:
 ```bash
-docker compose build giocci_relay
-docker compose push giocci_relay
+docker compose down
 ```
 
-## How to run docker container
-
+Restart the relay:
 ```bash
-docker compose run --rm giocci_relay
+docker compose restart giocci_relay
 ```
+
+Update to the latest version:
+```bash
+docker compose pull
+docker compose up -d
+```
+
+## Configuration
+
+### config/giocci_relay.exs
+
+- `zenoh_config_file_path`: Path to the Zenoh configuration file (default: `"/app/zenoh.json"`)
+  - **Important**: This path must match the volume mount destination in `docker-compose.yml`
+  - If you change this path, update the corresponding volume mount in `docker-compose.yml`
+- `relay_name`: Unique identifier for this relay instance
+
+### config/zenoh.json
+
+See Zenoh [DEFAULT_CONFIG.json5](https://github.com/eclipse-zenoh/zenoh/blob/1.7.1/DEFAULT_CONFIG.json5) for detailed options.
