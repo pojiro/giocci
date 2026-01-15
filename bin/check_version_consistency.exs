@@ -13,6 +13,7 @@ defmodule CheckVersions do
       |> check_app_docker_compose(versions)
       |> check_mix_exs(versions)
       |> check_tool_versions(versions)
+      |> check_zenohex_versions(versions)
 
     if errors == [] do
       IO.puts("version check: OK")
@@ -56,6 +57,7 @@ defmodule CheckVersions do
       "ERLANG_VERSION",
       "UBUNTU_VERSION",
       "ZENOH_VERSION",
+      "ZENOHEX_VERSION",
       "PROJECT_VERSION"
     ]
     missing = Enum.reject(required, &Map.has_key?(versions, &1))
@@ -216,6 +218,28 @@ defmodule CheckVersions do
       "elixir tool version mismatch",
       "elixir #{elixir_version}-otp-#{erlang_major}"
     )
+  end
+
+  defp check_zenohex_versions(errors, versions) do
+    zenohex_version = versions["ZENOHEX_VERSION"]
+
+    [
+      "apps/giocci_client/mix.exs",
+      "apps/giocci_engine/mix.exs",
+      "apps/giocci_relay/mix.exs"
+    ]
+    |> Enum.reduce(errors, fn file, acc ->
+      content = File.read!(file)
+
+      check_match(
+        acc,
+        file,
+        content,
+        ~r/\{:zenohex,\s*\"==\s*#{Regex.escape(zenohex_version)}\"\}/,
+        "zenohex version mismatch",
+        "{:zenohex, \"== #{zenohex_version}\"}"
+      )
+    end)
   end
 
   defp base_elixir_tag(versions) do

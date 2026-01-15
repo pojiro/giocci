@@ -1,6 +1,6 @@
-FROM hexpm/elixir:1.19.4-erlang-28.3-ubuntu-noble-20251013
+FROM hexpm/elixir:1.19.5-erlang-28.3-ubuntu-noble-20251013
 
-ARG ZENOH_VERSION=1.7.1
+ARG ZENOH_VERSION=1.7.2
 ARG ZENOH_ARCHIVE=zenoh-${ZENOH_VERSION}-x86_64-unknown-linux-gnu-standalone.zip
 ARG ZENOH_URL=https://github.com/eclipse-zenoh/zenoh/releases/download/${ZENOH_VERSION}/${ZENOH_ARCHIVE}
 
