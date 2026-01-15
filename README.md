@@ -54,16 +54,13 @@ All components require:
 
 ## Quick Start
 
-1. **Deploy Zenoh daemon**:
-   ```bash
-   docker compose up -d zenohd
-   ```
+1. **Deploy GiocciRelay**: Follow [apps/giocci_relay/README.md](apps/giocci_relay/README.md)
 
-2. **Deploy GiocciRelay**: Follow [apps/giocci_relay/README.md](apps/giocci_relay/README.md)
+2. **Deploy GiocciEngine**: Follow [apps/giocci_engine/README.md](apps/giocci_engine/README.md)
 
-3. **Deploy GiocciEngine**: Follow [apps/giocci_engine/README.md](apps/giocci_engine/README.md)
+3. **Try it out**: Follow the "Running with Docker" section in [apps/giocci_client/README.md](apps/giocci_client/README.md) to test the platform
 
-4. **Use GiocciClient in your application**: Follow [apps/giocci_client/README.md](apps/giocci_client/README.md)
+4. **Use in your application**: Once you're familiar with the platform, integrate GiocciClient into your Elixir application. See the [Installation](apps/giocci_client/README.md#installation) and [Usage](apps/giocci_client/README.md#usage) sections in the GiocciClient README
 
 ## Architecture
 
