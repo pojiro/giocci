@@ -25,7 +25,14 @@ defmodule Giocci.MixProject do
 
   defp aliases do
     [
-      test: ["test --no-start"]
+      {:test, ["test --no-start"]},
+      {:"deps.get",
+       [
+         # at root
+         "deps.get",
+         # at under each apps
+         "cmd mix deps.get"
+       ]}
     ]
   end
 end
