@@ -180,4 +180,4 @@ See the [HexDocs](https://hexdocs.pm/giocci_client) for detailed API documentati
 
 ## Architecture
 
-For information about the overall Giocci architecture and communication flows, see the [main README](../../README.md).
+For information about the overall Giocci architecture and communication flows, see the [main README](https://github.com/biyooon-ex/giocci/blob/main/README.md).

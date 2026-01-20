@@ -15,7 +15,8 @@ defmodule GiocciClient.MixProject do
       aliases: aliases(),
       releases: releases(),
       description: description(),
-      package: package()
+      package: package(),
+      docs: docs()
     ]
   end
 
@@ -46,6 +47,13 @@ defmodule GiocciClient.MixProject do
       files: ~w(lib .formatter.exs mix.exs README* LICENSE*),
       licenses: ["Apache-2.0"],
       links: %{"GitHub" => "https://github.com/biyooon-ex/giocci"}
+    ]
+  end
+
+  defp docs() do
+    [
+      extras: ["README.md"],
+      main: "readme"
     ]
   end
 
