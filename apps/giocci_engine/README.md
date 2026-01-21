@@ -12,7 +12,8 @@ GiocciEngine is the execution engine component of the GiocciPlatform that receiv
 
 1. Download `./config` and `./docker-compose.yml` to your working directory
 
-2. Edit `config/DEFAULT_CONFIG.json5` to configure Zenoh connection:
+2. Edit `config/zenoh.json5` to configure Zenoh connection:
+   - This file is copied from [the official Zenoh repository](https://github.com/eclipse-zenoh/zenoh/blob/main/DEFAULT_CONFIG.json5) and modifiled for Giocci (check `MODIFIED_FOR_GIOCCI` label in the file).
    - Set `connect.endpoints` to your Zenohd server address (e.g., `["tcp/192.168.1.100:7447"]`)
 
 3. Edit `config/giocci_engine.exs` to configure the engine:
@@ -52,12 +53,12 @@ docker compose up -d giocci_engine
 
 ### config/giocci_engine.exs
 
-- `zenoh_config_file_path`: Path to the Zenoh configuration file (default: `"/app/zenoh.json"`)
+- `zenoh_config_file_path`: Path to the Zenoh configuration file (default: `"/app/zenoh.json5"`)
   - **Important**: This path must match the volume mount destination in `docker-compose.yml`
   - If you change this path, update the corresponding volume mount in `docker-compose.yml`
 - `engine_name`: Unique identifier for this engine instance
 - `relay_name`: Name of the GiocciRelay instance to connect to
 
-### config/DEFAULT_CONFIG.json5
+### config/zenoh.json5
 
 See Zenoh [DEFAULT_CONFIG.json5](https://github.com/eclipse-zenoh/zenoh/blob/1.7.1/DEFAULT_CONFIG.json5) for detailed options.

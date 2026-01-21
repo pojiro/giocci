@@ -7,7 +7,7 @@ config :logger, :default_formatter,
 
 # Path to Zenoh configuration in docker image
 # Important: This must match the volume mount destination in docker-compose.yml
-config :giocci_relay, zenoh_config_file_path: "/app/zenoh.json"
+config :giocci_relay, zenoh_config_file_path: "/app/zenoh.json5"
 
 # Unique relay identifier
 config :giocci_relay, relay_name: "giocci_relay"

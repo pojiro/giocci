@@ -20,7 +20,7 @@ Configure Giocci in your `config/config.exs`:
 
 ```elixir
 config :giocci,
-  zenoh_config_file_path: "path/to/zenoh.json",   # Path to Zenoh configuration
+  zenoh_config_file_path: "path/to/zenoh.json5",  # Path to Zenoh configuration
   client_name: "my_client",                       # Unique client identifier
   key_prefix: ""                                  # Optional key prefix for Zenoh keys
 ```
@@ -120,7 +120,8 @@ The Docker environment is provided for troubleshooting network connectivity issu
    cd apps/giocci
    ```
 
-2. Edit `config/DEFAULT_CONFIG.json5` to configure Zenoh connection:
+2. Edit `config/zenoh.json5` to configure Zenoh connection:
+   - This file is copied from [the official Zenoh repository](https://github.com/eclipse-zenoh/zenoh/blob/main/DEFAULT_CONFIG.json5) and modifiled for Giocci (check `MODIFIED_FOR_GIOCCI` label in the file).
    - Set `connect.endpoints` to your Zenohd server address (e.g., `["tcp/192.168.1.100:7447"]`)
 
 3. Edit `config/giocci.exs` to configure the client:
@@ -168,7 +169,7 @@ docker compose logs -f zenohd
 ```
 
 Common issues:
-- **Connection timeout**: Verify `connect.endpoints` in `config/DEFAULT_CONFIG.json5` is correct
+- **Connection timeout**: Verify `connect.endpoints` in `config/zenoh.json5` is correct
 - **Relay not found**: Ensure the relay name matches between client config and running relay
 - **Key prefix mismatch**: Verify `key_prefix` is the same across client, relay, and engine configurations
 - **Module not loaded**: Check engine logs for module loading errors

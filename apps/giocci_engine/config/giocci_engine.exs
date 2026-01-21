@@ -7,7 +7,7 @@ config :logger, :default_formatter,
 
 # Path to Zenoh configuration in docker image
 # Important: This must match the volume mount destination in docker-compose.yml
-config :giocci_engine, zenoh_config_file_path: "/app/zenoh.json"
+config :giocci_engine, zenoh_config_file_path: "/app/zenoh.json5"
 
 # Unique engine identifier
 config :giocci_engine, engine_name: "giocci_engine"
