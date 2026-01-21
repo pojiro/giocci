@@ -1,4 +1,4 @@
-# This config is an example for Giocci Client Docker image
+# This config is an example for GiocciClient Docker image
 import Config
 
 config :logger, :default_formatter,

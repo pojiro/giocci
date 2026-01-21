@@ -1,4 +1,4 @@
-# This config is an example for Giocci Realy Docker image
+# This config is an example for GiocciRealy Docker image
 import Config
 
 config :logger, :default_formatter,

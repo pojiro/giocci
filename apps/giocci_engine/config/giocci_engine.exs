@@ -1,4 +1,4 @@
-# This config is an example for Giocci Engine Docker image
+# This config is an example for GiocciEngine Docker image
 import Config
 
 config :logger, :default_formatter,
