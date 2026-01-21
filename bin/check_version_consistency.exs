@@ -11,6 +11,7 @@ defmodule CheckVersions do
       |> check_apps_dockerfiles(versions)
       |> check_docker_compose(versions)
       |> check_app_docker_compose(versions)
+      |> check_ci_yml(versions)
       |> check_mix_exs(versions)
       |> check_tool_versions(versions)
       |> check_zenohex_versions(versions)
@@ -138,6 +139,21 @@ defmodule CheckVersions do
       content,
       ~r/image:\s+\S*zenohd:#{Regex.escape(zenoh_version)}/,
       "zenohd image tag mismatch",
+      "zenohd:#{zenoh_version}"
+    )
+  end
+
+  defp check_ci_yml(errors, versions) do
+    file = ".github/workflows/ci.yml"
+    content = File.read!(file)
+    zenoh_version = versions["ZENOH_VERSION"]
+
+    check_match(
+      errors,
+      file,
+      content,
+      ~r/image:\s+\S*zenohd:#{Regex.escape(zenoh_version)}/,
+      "CI zenohd image tag mismatch",
       "zenohd:#{zenoh_version}"
     )
   end
