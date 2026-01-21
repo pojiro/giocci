@@ -6,7 +6,7 @@ services:
       dockerfile: ./Dockerfile
     volumes:
       - ./config/giocci_engine.exs:/app/giocci_engine.exs:ro
-      - ./config/zenoh.json:/app/zenoh.json:ro
+      - ./config/DEFAULT_CONFIG.json5:/app/zenoh.json:ro
     restart: "always"
     logging:
       driver: "json-file"

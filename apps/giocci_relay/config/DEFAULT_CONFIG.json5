@@ -9,7 +9,8 @@
   // id: "1234567890abcdef",
 
   /// The node's mode (router, peer or client)
-  mode: "peer",
+  /// MODIFIED_FOR_GIOCCI
+  mode: "client",
 
   /// The node's metadata (name, location, DNS name, etc.) Arbitrary JSON data not interpreted by zenoh and available in admin space @/<zid>/router, @/<zid>/peer or @/<zid>/client
   metadata: {
@@ -47,6 +48,8 @@
     /// See https://docs.rs/zenoh/latest/zenoh/config/struct.EndPoint.html
     endpoints: [
       // "<proto>/<address>"
+      // MODIFIED_FOR_GIOCCI
+      "tcp/192.168.0.95:7447"
     ],
 
     /// Global connect configuration,
