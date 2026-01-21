@@ -1,9 +1,9 @@
-defmodule GiocciIntegration.MixProject do
+defmodule GiocciIntegrationTest.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :giocci_integration,
+      app: :giocci_integration_test,
       version: "0.3.0",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
@@ -59,7 +59,7 @@ defmodule GiocciIntegration.MixProject do
 
         exit_code =
           Mix.shell().cmd(
-            "docker compose run --rm --workdir /app/apps/giocci_integration zenohd mix test"
+            "docker compose run --rm --workdir /app/apps/giocci_integration_test zenohd mix test"
           )
 
         System.halt(exit_code)

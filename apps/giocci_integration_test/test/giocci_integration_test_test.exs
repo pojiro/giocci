@@ -1,4 +1,4 @@
-defmodule GiocciIntegrationTest do
+defmodule GiocciIntegrationTestTest do
   use ExUnit.Case
 
   @moduletag capture_log: true
@@ -57,13 +57,17 @@ defmodule GiocciIntegrationTest do
 
     test "normal scenario" do
       assert :ok == GiocciClient.register_client(@relay_name)
-      assert :ok == GiocciClient.save_module(@relay_name, GiocciIntegration)
-      assert 3 == GiocciClient.exec_func(@relay_name, {GiocciIntegration, :add, [1, 2]})
+      assert :ok == GiocciClient.save_module(@relay_name, GiocciIntegrationTest)
+      assert 3 == GiocciClient.exec_func(@relay_name, {GiocciIntegrationTest, :add, [1, 2]})
 
-      assert {:error, "function_not_defined: {GiocciIntegration, :undefined_function, []}"} ==
-               GiocciClient.exec_func(@relay_name, {GiocciIntegration, :undefined_function, []})
+      assert {:error, "function_not_defined: {GiocciIntegrationTest, :undefined_function, []}"} ==
+               GiocciClient.exec_func(
+                 @relay_name,
+                 {GiocciIntegrationTest, :undefined_function, []}
+               )
 
-      :ok = GiocciClient.exec_func_async(@relay_name, {GiocciIntegration, :add, [1, 2]}, self())
+      :ok =
+        GiocciClient.exec_func_async(@relay_name, {GiocciIntegrationTest, :add, [1, 2]}, self())
 
       assert_receive {:giocci_client, 3},
                      @async_message_timeout,
@@ -88,17 +92,17 @@ defmodule GiocciIntegrationTest do
     test "engine starts before save_module - modules are distributed on registration" do
       assert :ok == GiocciClient.register_client(@relay_name)
       {:ok, _} = Application.ensure_all_started(:giocci_engine)
-      assert :ok == GiocciClient.save_module(@relay_name, GiocciIntegration)
+      assert :ok == GiocciClient.save_module(@relay_name, GiocciIntegrationTest)
 
-      assert 3 == GiocciClient.exec_func(@relay_name, {GiocciIntegration, :add, [1, 2]})
+      assert 3 == GiocciClient.exec_func(@relay_name, {GiocciIntegrationTest, :add, [1, 2]})
     end
 
     test "engine starts after save_module - modules are distributed on engine registration" do
       assert :ok == GiocciClient.register_client(@relay_name)
-      assert :ok == GiocciClient.save_module(@relay_name, GiocciIntegration)
+      assert :ok == GiocciClient.save_module(@relay_name, GiocciIntegrationTest)
       {:ok, _} = Application.ensure_all_started(:giocci_engine)
 
-      assert 3 == GiocciClient.exec_func(@relay_name, {GiocciIntegration, :add, [1, 2]})
+      assert 3 == GiocciClient.exec_func(@relay_name, {GiocciIntegrationTest, :add, [1, 2]})
     end
   end
 
@@ -126,10 +130,10 @@ defmodule GiocciIntegrationTest do
       setup_relay_and_client()
 
       assert :ok == GiocciClient.register_client(@relay_name)
-      assert :ok == GiocciClient.save_module(@relay_name, GiocciIntegration)
+      assert :ok == GiocciClient.save_module(@relay_name, GiocciIntegrationTest)
 
       assert {:error, "engine_not_registered"} ==
-               GiocciClient.exec_func(@relay_name, {GiocciIntegration, :add, [1, 2]})
+               GiocciClient.exec_func(@relay_name, {GiocciIntegrationTest, :add, [1, 2]})
     end
 
     test "engine registered then stopped - exec_func fails" do
@@ -137,17 +141,17 @@ defmodule GiocciIntegrationTest do
       setup_engine()
 
       assert :ok == GiocciClient.register_client(@relay_name)
-      assert :ok == GiocciClient.save_module(@relay_name, GiocciIntegration)
+      assert :ok == GiocciClient.save_module(@relay_name, GiocciIntegrationTest)
 
       # Engine is working
-      assert 3 == GiocciClient.exec_func(@relay_name, {GiocciIntegration, :add, [1, 2]})
+      assert 3 == GiocciClient.exec_func(@relay_name, {GiocciIntegrationTest, :add, [1, 2]})
 
       # Stop engine manually (on_exit will handle cleanup if this fails)
       cleanup_engine()
 
       # Engine is no longer available - Zenoh channel is closed
       result =
-        GiocciClient.exec_func(@relay_name, {GiocciIntegration, :add, [1, 2]},
+        GiocciClient.exec_func(@relay_name, {GiocciIntegrationTest, :add, [1, 2]},
           timeout: @engine_stopped_timeout
         )
 

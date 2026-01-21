@@ -1,4 +1,4 @@
-defmodule GiocciIntegration do
+defmodule GiocciIntegrationTest do
   @moduledoc """
   Test module for integration testing.
 

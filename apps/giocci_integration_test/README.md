@@ -1,10 +1,10 @@
-# GiocciIntegration
+# GiocciIntegrationTest
 
 Integration test suite for Giocci.
 
 This application contains integration tests that verify the interaction between
 Giocci components (client, relay, and engine). It includes a test module
-(`GiocciIntegration`) that is used to test module distribution and remote
+(`GiocciIntegrationTest`) that is used to test module distribution and remote
 execution across the system.
 
 ## Running Tests
